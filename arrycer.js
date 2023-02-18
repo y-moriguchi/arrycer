@@ -222,6 +222,28 @@ function Arrycer(option) {
                : inner(anArray, depth);
     }
 
+    function reduceAll(anArray, f, init) {
+        const initf1 = init === undef ? innerInit : init;
+        const f1 = (accum, x) => accum === innerInit ? x : f(accum, x);
+
+        function inner(anArray, value) {
+            if(Array.isArray(anArray)) {
+                let result = value;
+
+                for(let i = 0; i < anArray.length; i++) {
+                    result = inner(anArray[i], result);
+                }
+                return result;
+            } else {
+                return f1(value, anArray);
+            }
+        }
+
+        const result = inner(anArray, initf1);
+
+        return result === innerInit ? undef : result;
+    }
+
     function concatDeep(axis, ...arrays) {
         function innerLayer(...arrays) {
             if(arrays.every(x => x.length === 0)) {
@@ -608,6 +630,7 @@ function Arrycer(option) {
         transpose: transpose,
         reduceAxis: reduceAxis,
         reduceDepth: reduceDepth,
+        reduceAll: reduceAll,
         concatDeep: concatDeep,
         mapScalar: mapScalar,
         isEmpty: isEmpty,

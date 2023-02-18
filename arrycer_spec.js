@@ -79,6 +79,15 @@ describe("arrycer", function() {
             ok(A.reduceDepth([[[1, 2], [3, 4]], [[5, 6, 7], [8], []]], addf, 100, 0), [[3, 7], [18, 8, 0]]);
         });
 
+        it("reduceAll", function() {
+            ok(A.reduceAll(2, addf, 0), 2);
+            ok(A.reduceAll([2, 3], addf, 1), 6);
+            ok(A.reduceAll([[2, 3], [4, [5, 6], 7], 8, [9, 10]], addf, 1), 55);
+            ok(A.reduceAll([[2, 3], [4, [5, 6], 7], 8, [9, 10]], addf), 54);
+            ok(A.reduceAll([], addf), undefined);
+            ok(A.reduceAll([[[]], [], []], addf), undefined);
+        });
+
         it("concatDeep", function() {
             ok(A.concatDeep(0, [1, 2, 3], [4, 5, 6]), [1, 2, 3, 4, 5, 6]);
             ok(A.concatDeep(1, [[1, 2], [3, 4]], [[5, 6, 7], [8, 9, 0]]), [[1, 2, 5, 6, 7], [3, 4, 8, 9, 0]]);
