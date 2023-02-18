@@ -336,7 +336,7 @@ function Arrycer(option) {
                : f(anObject, scalar);
     }
 
-    function reshape(shape, anArray) {
+    function reshape(anArray, ...shape) {
         function* walkArray(anArray) {
             if(Array.isArray(anArray)) {
                 for(let i = 0; i < anArray.length; i++) {
@@ -513,7 +513,12 @@ function Arrycer(option) {
         } else if(indices[0] === null) {
             return anArray.map(x => subarray(x, indices.slice(1)));
         } else if(Array.isArray(indices[0])) {
-            return anArray.filter((x, index) => indices[0].indexOf(index) >= 0).map(x => subarray(x, indices.slice(1)));
+            const result = [];
+
+            for(let i = 0; i < indices[0].length; i++) {
+                result.push(subarray(anArray[indices[0][i]], indices.slice(1)));
+            }
+            return result;
         } else if(typeof indices[0] === "function") {
             return anArray.filter((x, index, a) => indices[0](x, index, a)).map(x => subarray(x, indices.slice(1)));
         } else if(Number.isSafeInteger(indices[0]) && indices[0] >= 0) {

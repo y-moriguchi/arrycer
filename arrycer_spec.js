@@ -33,7 +33,7 @@ describe("arrycer", function() {
             ok(A.inner([1, 2, 3], [4, 5, 6], addf, mulf, 2, 2), 66);
             ok(A.inner([1, 2, 3], [4, 5, 6], subf, mulf), -24);
             ok(A.inner([[1, 2], [3, 4]], [[5, 6], [7, 8]], addf, mulf), [[19, 22], [43, 50]]);
-            ok(A.inner(A.reshape([2, 3, 4], [1, 2, 3]), A.reshape([4, 3, 2], [2, 3, 4]), addf, mulf),
+            ok(A.inner(A.reshape([1, 2, 3], 2, 3, 4), A.reshape([2, 3, 4], 4, 3, 2), addf, mulf),
                 [[[[14, 21], [28, 14], [21, 28]], [[16, 24], [32, 16], [24, 32]], [[18, 27], [36, 18], [27, 36]]],
                  [[[14, 21], [28, 14], [21, 28]], [[16, 24], [32, 16], [24, 32]], [[18, 27], [36, 18], [27, 36]]]]);
         });
@@ -114,9 +114,9 @@ describe("arrycer", function() {
         });
 
         it("reshape", function() {
-            ok(A.reshape([3], [[1, 2], [3, 4]]), [1, 2, 3]);
-            ok(A.reshape([2, 3], [[1, 2], [3, 4], [5, 6]]), [[1, 2, 3], [4, 5, 6]]);
-            ok(A.reshape([2, 3], [[1, 2], [3, 4]]), [[1, 2, 3], [4, 1, 2]]);
+            ok(A.reshape([[1, 2], [3, 4]], 3), [1, 2, 3]);
+            ok(A.reshape([[1, 2], [3, 4], [5, 6]], 2, 3), [[1, 2, 3], [4, 5, 6]]);
+            ok(A.reshape([[1, 2], [3, 4]], 2, 3), [[1, 2, 3], [4, 1, 2]]);
         });
 
         it("isEmpty", function() {
@@ -163,6 +163,7 @@ describe("arrycer", function() {
             ok(A.subarray([1, 2, 3], []), [1, 2, 3]);
             ok(A.subarray([[1, 2], [3, 4]], [null, 0]), [1, 3]);
             ok(A.subarray([[1, 2, 3], [4, 5, 6]], [(x, index) => index > 0, [1, 2]]), [[5, 6]]);
+            ok(A.subarray([[1, 2], [3, 4]], [[1, 0], null]), [[3, 4], [1, 2]]);
         });
 
         it("indexOfArray", function() {
@@ -237,8 +238,8 @@ describe("arrycer", function() {
         });
 
         it("reshape", function() {
-            expect(() => A.reshape([1, 2], 2)).toThrow();
-            expect(() => A.reshape([1, 2], [])).toThrow();
+            expect(() => A.reshape(2, 1, 2)).toThrow();
+            expect(() => A.reshape([], 1, 2)).toThrow();
         });
 
         it("sortIndex", function() {
