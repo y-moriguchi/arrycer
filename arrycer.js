@@ -138,6 +138,48 @@ function Arrycer(option) {
                : inner(anArray, fn, [], arrayRank.length - 1);
     }
 
+    function transpose(anArray, ...axes) {
+        const result = [];
+
+        function setArray(a, result, indices, i) {
+            if(i === indices.length - 1) {
+                result[indices[axes[i]]] = a;
+            } else {
+                if(result[indices[axes[i]]] === undef) {
+                    result[indices[axes[i]]] = [];
+                }
+                setArray(a, result[indices[axes[i]]], indices, i + 1);
+            }
+        }
+
+        function inner(a, indices) {
+            return Array.isArray(a)
+                   ? a.map((x, i) => inner(x, indices.concat([i])))
+                   : setArray(a, result, indices, 0)
+        }
+
+        if(axes.some(x => typeof x !== "number")) {
+            error("illegal argument", axes);
+        }
+
+        const sorted = axes.slice().sort();
+
+        for(let i = 0; i < axes.length; i++) {
+            if(sorted[i] !== i) {
+                error("illegal argument", axes);
+            }
+        }
+
+        const arrayRank = rank(anArray);
+
+        if(arrayRank === null || arrayRank.length !== axes.length) {
+            error("illegal array");
+        } else {
+            inner(anArray, []);
+            return result;
+        }
+    }
+
     function reduceFirstAxis(anArray, f, init) {
         const initf1 = init === undef ? innerInit : init;
         const f1 = (accum, x) => accum === innerInit ? x : f(accum, x);
@@ -344,7 +386,15 @@ function Arrycer(option) {
             return obj1 === null ? null : a1.concat(obj1);
         }
 
-        return !Array.isArray(anObject)
+        function isProper(anObject) {
+            return !Array.isArray(anObject) ||
+                   anObject.every(x => !Array.isArray(x)) ||
+                   anObject.every(x => Array.isArray(x) && isProper(x));
+        }
+
+        return !isProper(anObject)
+               ? null
+               : !Array.isArray(anObject)
                ? []
                : anObject.length === 0
                ? [0]
@@ -455,31 +505,31 @@ function Arrycer(option) {
         return mapDeep(x => aVector.indexOf(x), Number.MAX_SAFE_INTEGER, anArray);
     }
 
-    function generate(g, size) {
-        if(!Number.isSafeInteger(size) || size < 0) {
-            error("Invalid size", size);
+    function generate(g, ...axes) {
+        if(!Array.isArray(axes) || axes.length === 0 || axes.some(x => typeof x !== "number" || x < 1 || !Number.isSafeInteger(x))) {
+            error("Invalid axes", axes);
         } else {
             const result = [];
 
-            for(let i = 0; i < size; i++) {
-                result.push(g());
+            for(let i = 0; i < axes[0]; i++) {
+                result.push(axes.length > 1 ? generate(g, ...axes.slice(1)) : g());
             }
             return result;
         }
     }
 
-    function iterate(f, seed, size) {
-        if(!Number.isSafeInteger(size) || size < 0) {
-            error("Invalid size", size);
-        } else {
-            const result = [];
+    function iterate(f, seed, ...axes) {
+        function getvalue() {
             let now = seed;
 
-            for(let i = 0; i < size; i++, now = f(now)) {
-                result.push(now);
-            }
-            return result;
+            return () => {
+                const result = now;
+
+                now = f(now);
+                return result;
+            };
         }
+        return generate(getvalue(), ...axes);
     }
 
     function atArray(aVector, anArray) {
@@ -555,6 +605,7 @@ function Arrycer(option) {
         inner: inner,
         outer: outer,
         T: T,
+        transpose: transpose,
         reduceAxis: reduceAxis,
         reduceDepth: reduceDepth,
         concatDeep: concatDeep,

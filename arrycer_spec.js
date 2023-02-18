@@ -55,6 +55,10 @@ describe("arrycer", function() {
             ok(A.T([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [2, 3, 4]]]), [[[1, 7], [4, 2]], [[2, 8], [5, 3]], [[3, 9], [6, 4]]]);
         });
 
+        it("transpose", function() {
+            ok(A.transpose([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [2, 3, 4]]], 1, 2, 0), [[[1, 7], [2, 8], [3, 9]], [[4, 2], [5, 3], [6, 4]]]);
+        });
+
         it("reduceAxis", function() {
             ok(A.reduceAxis(2, addf, 0), 2);
             ok(A.reduceAxis([], addf, 0), []);
@@ -120,6 +124,7 @@ describe("arrycer", function() {
             ok(A.rank([]), [0]);
             ok(A.rank([[1, 2, 3], [4, 5, 6]]), [2, 3]);
             ok(A.rank([1, [2, 3]]), null);
+            ok(A.rank([[1, 2], [3, [4, 5]]]), null);
             ok(A.rank([[1, 2], [3, [4, 5], 6]]), null);
             ok(A.rank([[1, 2, 3], [4, 5, 6, 7]]), null);
         });
@@ -157,10 +162,12 @@ describe("arrycer", function() {
 
         it("generate", function() {
             ok(A.generate(x => 1, 3), [1, 1, 1]);
+            ok(A.generate(x => 1, 3, 2, 2), [[[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]]]);
         });
 
         it("iterate", function() {
             ok(A.iterate(x => x * 2, 1, 3), [1, 2, 4]);
+            ok(A.iterate(x => x + 1, 1, 3, 2, 2), [[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]]);
         });
 
         it("atArray", function() {
@@ -191,6 +198,13 @@ describe("arrycer", function() {
 
         it("T", function() {
             expect(() => A.T([1, [2, 3]])).toThrow();
+        });
+
+        it("transpose", function() {
+            expect(() => A.transpose([[1, 2], [3, 4]], 1, 2)).toThrow();
+            expect(() => A.transpose([[1, 2], [3, 4]], 0, "1")).toThrow();
+            expect(() => A.transpose([[1, 2], [3, 4]], 0)).toThrow();
+            expect(() => A.transpose([[1, 2], [3, [4, 5]]], 1, 0)).toThrow();
         });
 
         it("reduceAxis", function() {
@@ -231,6 +245,9 @@ describe("arrycer", function() {
         it("generate", function() {
             expect(() => A.generate(x => 1, -1)).toThrow();
             expect(() => A.generate(x => 1, 0.5)).toThrow();
+            expect(() => A.generate(x => 1, "1", 2)).toThrow();
+            expect(() => A.generate(x => 1, [1], 3)).toThrow();
+            expect(() => A.generate(x => 1)).toThrow();
         });
 
         it("iterate", function() {
