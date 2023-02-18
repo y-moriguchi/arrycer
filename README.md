@@ -29,13 +29,13 @@ A.concatDeep(0.5, [[1, 2], [3, 4]], [[5, 6], [8, 9]]);
 // -> [[[1, 2], [5, 6]], [[3, 4], [8, 9]]]
 
 // map arrays
-A.mapDeep(addf, 100, [[1, 2], [3, 4]], [[5, 6], [7, 8]]);
+A.mapDeep((accum, x) => accum + x, 100, [[1, 2], [3, 4]], [[5, 6], [7, 8]]);
 // [[6, 8], [10, 12]]
-A.mapDeep(addf, 100, [[1, 2]], [[3], [4]]);  // broadcasting like NumPy
+A.mapDeep((accum, x) => accum + x, 100, [[1, 2]], [[3], [4]]);  // broadcasting like NumPy
 // [[4, 5], [5, 6]]
 
 // reshape array
-A.reshape([2, 3], [[1, 2], [3, 4]]);
+A.reshape([[1, 2], [3, 4]], 2, 3);
 // -> [[1, 2, 3], [4, 1, 2]]
 
 // take and drop array
