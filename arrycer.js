@@ -618,15 +618,41 @@ function Arrycer(option) {
                : error("Invalid argument", aVector[0]);
     }
 
-    function take(anArray, aVector) {
+    function slicePad(anArray, start, end, anVector, pad) {
+        function padLevel(anVector) {
+            if(anVector.length === 0) {
+                return pad;
+            } else {
+                const result = [];
+
+                for(let i = 0; i < Math.abs(anVector[0]); i++) {
+                    result[i] = padLevel(anVector.slice(1));
+                }
+                return result;
+            }
+        }
+
+        if(start >= 0 && end < anArray.length) {
+            return anArray.slice(start, end);
+        } else {
+            const result = [];
+
+            for(let i = start; i < end; i++) {
+                result[i - start] = i >= 0 && i < anArray.length ? anArray[i] : padLevel(anVector);
+            }
+            return result;
+        }
+    }
+
+    function take(anArray, aVector, pad) {
         return aVector.length === 0
                ? anArray
                : !Array.isArray(anArray)
                ? error("Array required", anArray)
-               : Number.isSafeInteger(aVector[0]) && aVector[0] >= 0 && aVector[0] <= anArray.length
-               ? anArray.slice(0, aVector[0]).map(x => take(x, aVector.slice(1)))
-               : Number.isSafeInteger(aVector[0]) && aVector[0] < 0 && anArray.length + aVector[0] >= 0
-               ? anArray.slice(anArray.length + aVector[0], anArray.length).map(x => take(x, aVector.slice(1)))
+               : Number.isSafeInteger(aVector[0]) && aVector[0] >= 0
+               ? slicePad(anArray, 0, aVector[0], aVector.slice(1), pad).map(x => take(x, aVector.slice(1), pad))
+               : Number.isSafeInteger(aVector[0]) && aVector[0] < 0
+               ? slicePad(anArray, anArray.length + aVector[0], anArray.length, aVector.slice(1), pad).map(x => take(x, aVector.slice(1), pad))
                : error("Invalid argument", aVector[0]);
     }
 
