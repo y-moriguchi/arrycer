@@ -244,7 +244,50 @@ function Arrycer(option) {
         return result === innerInit ? undef : result;
     }
 
-    function concatDeep(axis, ...arrays) {
+    function reverseAxis(array1, axis) {
+        function rev(array0, level) {
+            const result = [];
+
+            if(!Array.isArray(array0)) {
+                return array0;
+            } else if(level === axis) {
+                for(let i = 0; i < array0.length; i++) {
+                    result[array0.length - i - 1] = rev(array0[i], level + 1);
+                }
+            } else {
+                for(let i = 0; i < array0.length; i++) {
+                    result[i] = rev(array0[i], level + 1);
+                }
+            }
+            return result;
+        }
+
+        if(!Number.isSafeInteger(axis) || axis < 0) {
+            error("Axis must be non-negative integer", axis)
+        } else if(!Array.isArray(array1)) {
+            return array1;
+        } else {
+            const rhoVector = rank(array1);
+
+            return rhoVector === null
+                   ? error("Invalid array")
+                   : axis >= rhoVector.length
+                   ? error("Invalid axis", axis)
+                   : rev(array1, 0);
+        }
+    }
+
+    function reverseDeep(anArray, depth) {
+        return !Array.isArray(anArray)
+               ? anArray
+               : depth === 0 || anArray.every(x => !Array.isArray(x))
+               ? anArray.slice().reverse()
+               : anArray.every(x => Array.isArray(x))
+               ? anArray.map(x => reverseDeep(x, depth - 1))
+               : error("Invalid array");
+    }
+
+    function concatAxis(axis, ...arrays) {
         function innerLayer(...arrays) {
             if(arrays.every(x => x.length === 0)) {
                 return arrays;
@@ -263,11 +306,11 @@ function Arrycer(option) {
             return [];
         } else if(axis >= 0 && Number.isSafeInteger(axis)) {
             return axis > 0
-                   ? [concatDeep(axis - 1, ...arrays.map(x => x[0]))].concat(concatDeep(axis, ...arrays.map(x => x.slice(1))))
+                   ? [concatAxis(axis - 1, ...arrays.map(x => x[0]))].concat(concatAxis(axis, ...arrays.map(x => x.slice(1))))
                    : [].concat(...arrays);
         } else {
             return axis > 0
-                   ? [concatDeep(axis - 1, ...arrays.map(x => x[0]))].concat(concatDeep(axis, ...arrays.map(x => x.slice(1))))
+                   ? [concatAxis(axis - 1, ...arrays.map(x => x[0]))].concat(concatAxis(axis, ...arrays.map(x => x.slice(1))))
                    : innerLayer(...arrays);
         }
     }
@@ -634,9 +677,11 @@ function Arrycer(option) {
         T: T,
         transpose: transpose,
         reduceAxis: reduceAxis,
-        reduceDepth: reduceDepth,
+        reduceDeep: reduceDepth,
         reduceAll: reduceAll,
-        concatDeep: concatDeep,
+        reverseAxis: reverseAxis,
+        reverseDeep: reverseDeep,
+        concatAxis: concatAxis,
         mapScalar: mapScalar,
         isEmpty: isEmpty,
         rank: rank,

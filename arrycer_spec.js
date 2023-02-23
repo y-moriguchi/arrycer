@@ -70,13 +70,13 @@ describe("arrycer", function() {
             ok(A.reduceAxis([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], addf, 0, 2), [[8, 10], [12, 14]]);
         });
 
-        it("reduceDepth", function() {
-            ok(A.reduceDepth(2, addf, 100), 2);
-            ok(A.reduceDepth([1, 2], addf, 100), 3);
-            ok(A.reduceDepth([[1, 2], [3, 4]], addf, 100), [3, 7]);
-            ok(A.reduceDepth([[1, 2], [3, 4]], addf, 100, 2), [5, 9]);
-            ok(A.reduceDepth([[[1, 2], [3, 4]], [[5, 6, 7], [8], []]], addf, 100), [[3, 7], [18, 8, null]]);
-            ok(A.reduceDepth([[[1, 2], [3, 4]], [[5, 6, 7], [8], []]], addf, 100, 0), [[3, 7], [18, 8, 0]]);
+        it("reduceDeep", function() {
+            ok(A.reduceDeep(2, addf, 100), 2);
+            ok(A.reduceDeep([1, 2], addf, 100), 3);
+            ok(A.reduceDeep([[1, 2], [3, 4]], addf, 100), [3, 7]);
+            ok(A.reduceDeep([[1, 2], [3, 4]], addf, 100, 2), [5, 9]);
+            ok(A.reduceDeep([[[1, 2], [3, 4]], [[5, 6, 7], [8], []]], addf, 100), [[3, 7], [18, 8, null]]);
+            ok(A.reduceDeep([[[1, 2], [3, 4]], [[5, 6, 7], [8], []]], addf, 100, 0), [[3, 7], [18, 8, 0]]);
         });
 
         it("reduceAll", function() {
@@ -88,12 +88,26 @@ describe("arrycer", function() {
             ok(A.reduceAll([[[]], [], []], addf), undefined);
         });
 
-        it("concatDeep", function() {
-            ok(A.concatDeep(0, [1, 2, 3], [4, 5, 6]), [1, 2, 3, 4, 5, 6]);
-            ok(A.concatDeep(1, [[1, 2], [3, 4]], [[5, 6, 7], [8, 9, 0]]), [[1, 2, 5, 6, 7], [3, 4, 8, 9, 0]]);
-            ok(A.concatDeep(0.5, [[1, 2], [3, 4]], [[5, 6], [8, 9]]), [[[1, 2], [5, 6]], [[3, 4], [8, 9]]]);
-            ok(A.concatDeep(-0.5, [1, 2, 3], [4, 5, 6]), [[1, 2, 3], [4, 5, 6]]);
-            ok(A.concatDeep(0.5, [[1, 2], [3, 4]], [[5, 6], [8, 9]], [[1, 2], [3, 4]]),
+        it("reverseAxis", function() {
+            ok(A.reverseAxis(2, 0), 2);
+            ok(A.reverseAxis([1, 2, 3], 0), [3, 2, 1]);
+            ok(A.reverseAxis([[[1, 2], [3, 4], [1, 2]], [[3, 4], [1, 2], [3, 4]]], 0),
+                [[[3, 4], [1, 2], [3, 4]], [[1, 2], [3, 4], [1, 2]]]);
+        });
+
+        it("reverseDeep", function() {
+            ok(A.reverseDeep(2, 1), 2);
+            ok(A.reverseDeep([1, 2, 3], 100), [3, 2, 1]);
+            ok(A.reverseDeep([[1, 2], 3, 4], 0), [4, 3, [1, 2]]);
+            ok(A.reverseDeep([[1, 2], [3, 4]], 100), [[2, 1], [4, 3]]);
+        });
+
+        it("concatAxis", function() {
+            ok(A.concatAxis(0, [1, 2, 3], [4, 5, 6]), [1, 2, 3, 4, 5, 6]);
+            ok(A.concatAxis(1, [[1, 2], [3, 4]], [[5, 6, 7], [8, 9, 0]]), [[1, 2, 5, 6, 7], [3, 4, 8, 9, 0]]);
+            ok(A.concatAxis(0.5, [[1, 2], [3, 4]], [[5, 6], [8, 9]]), [[[1, 2], [5, 6]], [[3, 4], [8, 9]]]);
+            ok(A.concatAxis(-0.5, [1, 2, 3], [4, 5, 6]), [[1, 2, 3], [4, 5, 6]]);
+            ok(A.concatAxis(0.5, [[1, 2], [3, 4]], [[5, 6], [8, 9]], [[1, 2], [3, 4]]),
                 [[[1, 2], [5, 6], [1, 2]], [[3, 4], [8, 9], [3, 4]]]);
         });
 
@@ -221,13 +235,25 @@ describe("arrycer", function() {
             expect(() => A.reduceAxis([1, [2, 3], 4], addf)).toThrow(); 
         });
 
-        it("reduceDepth", function() {
-            expect(() => A.reduceDepth([1, [2, 3], 4], addf)).toThrow(); 
+        it("reduceDeep", function() {
+            expect(() => A.reduceDeep([1, [2, 3], 4], addf)).toThrow(); 
         });
 
-        it("concatDeep", function() {
-            expect(() => A.concatDeep(1, [[1, 2], [3]], [4])).toThrow();
-            expect(() => A.concatDeep(-1, [1, 2], [3, 4, 5])).toThrow();
+        it("reverseAxis", function() {
+            expect(() => A.reverseAxis([[1, 2], [3, [4, 5]]], 0)).toThrow();
+            expect(() => A.reverseAxis([[1, 2], [3, 4]], -1)).toThrow();
+            expect(() => A.reverseAxis([[1, 2], [3, 4]], 0.1)).toThrow();
+            expect(() => A.reverseAxis([[1, 2], [3, 4]], "1")).toThrow();
+            expect(() => A.reverseAxis([[1, 2], [3, 4]], 2)).toThrow();
+        });
+
+        it("reverseDeep", function() {
+            expect(() => A.reverseDeep([1, 2, [3, 4]], 100)).toThrow();
+        });
+
+        it("concatAxis", function() {
+            expect(() => A.concatAxis(1, [[1, 2], [3]], [4])).toThrow();
+            expect(() => A.concatAxis(-1, [1, 2], [3, 4, 5])).toThrow();
         });
 
         it("mapDeep", function() {
