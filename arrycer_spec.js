@@ -93,6 +93,8 @@ describe("arrycer", function() {
             ok(A.reverseAxis([1, 2, 3], 0), [3, 2, 1]);
             ok(A.reverseAxis([[[1, 2], [3, 4], [1, 2]], [[3, 4], [1, 2], [3, 4]]], 0),
                 [[[3, 4], [1, 2], [3, 4]], [[1, 2], [3, 4], [1, 2]]]);
+            ok(A.reverseAxis([[[1, 2], [3, 4], [1, 2]], [[3, 4], [1, 2], [3, 4]]], 0, 2),
+                [[[4, 3], [2, 1], [4, 3]], [[2, 1], [4, 3], [2, 1]]]);
         });
 
         it("reverseDeep", function() {
@@ -241,10 +243,10 @@ describe("arrycer", function() {
 
         it("reverseAxis", function() {
             expect(() => A.reverseAxis([[1, 2], [3, [4, 5]]], 0)).toThrow();
-            expect(() => A.reverseAxis([[1, 2], [3, 4]], -1)).toThrow();
-            expect(() => A.reverseAxis([[1, 2], [3, 4]], 0.1)).toThrow();
-            expect(() => A.reverseAxis([[1, 2], [3, 4]], "1")).toThrow();
-            expect(() => A.reverseAxis([[1, 2], [3, 4]], 2)).toThrow();
+            expect(() => A.reverseAxis([[1, 2], [3, 4]], -1, 0)).toThrow();
+            expect(() => A.reverseAxis([[1, 2], [3, 4]], 0, 0.1)).toThrow();
+            expect(() => A.reverseAxis([[1, 2], [3, 4]], 0, "1")).toThrow();
+            expect(() => A.reverseAxis([[1, 2], [3, 4]], 1, 2)).toThrow();
         });
 
         it("reverseDeep", function() {

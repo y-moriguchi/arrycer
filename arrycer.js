@@ -244,13 +244,13 @@ function Arrycer(option) {
         return result === innerInit ? undef : result;
     }
 
-    function reverseAxis(array1, axis) {
+    function reverseAxis(array1, ...axes) {
         function rev(array0, level) {
             const result = [];
 
             if(!Array.isArray(array0)) {
                 return array0;
-            } else if(level === axis) {
+            } else if(axes.indexOf(level) >= 0) {
                 for(let i = 0; i < array0.length; i++) {
                     result[array0.length - i - 1] = rev(array0[i], level + 1);
                 }
@@ -262,7 +262,7 @@ function Arrycer(option) {
             return result;
         }
 
-        if(!Number.isSafeInteger(axis) || axis < 0) {
+        if(axes.some(x => !Number.isSafeInteger(x) || x < 0)) {
             error("Axis must be non-negative integer", axis)
         } else if(!Array.isArray(array1)) {
             return array1;
@@ -271,7 +271,7 @@ function Arrycer(option) {
 
             return rhoVector === null
                    ? error("Invalid array")
-                   : axis >= rhoVector.length
+                   : axes.some(x => x >= rhoVector.length)
                    ? error("Invalid axis", axis)
                    : rev(array1, 0);
         }
