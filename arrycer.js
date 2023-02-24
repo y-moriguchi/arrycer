@@ -180,17 +180,21 @@ function Arrycer(option) {
         }
     }
 
-    function reduceFirstAxis(anArray, f, init) {
+    function reduceFirstAxis(anArray, f, init, pad) {
         const initf1 = init === undef ? innerInit : init;
-        const f1 = (accum, x) => accum === innerInit ? x : f(accum, x);
+        const f1 = (accum, x) => {
+            const x1 = x === undef ? pad : x;
+
+            return accum === innerInit ? x1 : f(accum, x1);
+        };
 
         return reduceDeep(anArray, f1, initf1);
     }
 
-    function reduceAxis(anArray, f, depth, init) {
+    function reduceAxis(anArray, f, depth, init, pad) {
         return depth > 0
-               ? anArray.map(x => reduceAxis(x, f, depth - 1, init))
-               : reduceFirstAxis(anArray, f, init);
+               ? anArray.map(x => reduceAxis(x, f, depth - 1, init, pad))
+               : reduceFirstAxis(anArray, f, init, pad);
     }
 
     const lastMark = {};
