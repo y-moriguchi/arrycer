@@ -281,6 +281,21 @@ function Arrycer(option) {
         }
     }
 
+    function rotateAxis(array1, rotate, axis) {
+        function inner(array1, rotate, level) {
+            if(!Array.isArray(array1)) {
+                error("Invalid array");
+            } else if(axis !== level) {
+                return array1.map((x, i) => inner(x, rotate[i], level + 1));
+            } else if(Array.isArray(rotate)) {
+                return array1.map((x, i) => x.map((y, j) => array1[(i + rotate[j] + array1.length) % array1.length][j]));
+            } else {
+                return array1.map((x, i) => array1[(i + rotate + array1.length) % array1.length]);
+            }
+        }
+        return inner(array1, rotate, 0);
+    }
+
     function reverseDeep(anArray, depth) {
         return !Array.isArray(anArray)
                ? anArray
@@ -383,6 +398,113 @@ function Arrycer(option) {
                : f(anObject, scalar);
     }
 
+    const deepCopyF = (array1, f) => Array.isArray(array1) ? array1.map(x => deepCopyF(x, f)) : f(array1);
+
+    function replicateAxis(array1, vector, axis, pad) {
+        const padF = pad === undef ? 0 : pad;
+        const fill = (array1, times) => deepCopyF(array1, times > 0 ? x => x : x => padF);
+
+        function checkLength(array1, vector) {
+            return vector.length === array1.length
+                   ? true
+                   : vector.filter(x => x >= 0).length === array1.length
+                   ? false
+                   : error("Invalid array");
+        }
+
+        function inner(array1, level) {
+            if(!Array.isArray(array1)) {
+                error("Invalid array");
+            } else if(axis !== level) {
+                return array1.map(x => inner(x, level + 1));
+            } else if(Array.isArray(vector)) {
+                const isReplace = checkLength(array1, vector);
+                const result = [];
+
+                for(let i = 0, k = 0; i < vector.length; i++, k += isReplace || array1[i] >= 0 ? 1 : 0) {
+                    for(let j = 0; j < Math.abs(vector[i]); j++) {
+                        result.push(fill(array1[k], vector[i]));
+                    }
+                }
+                return result;
+            } else {
+                return vector === 0
+                       ? error("invalid scalar", vector)
+                       : array1.flatMap(x => iota(Math.abs(vector)).map(y => fill(x, vector)));
+            }
+        }
+        return Array.isArray(vector) && vector.some(x => !Number.isSafeInteger(x))
+               ? error("Invalid replicate parameter", vector)
+               : inner(array1, 0);
+    }
+
+    const reduceDeepArray = a => reduceDeep(a, (accum, x) => accum.concat([x]), []);
+
+    function decode(array1, array2) {
+        const isScalar = !Array.isArray(array2);
+
+        function inner1(array1, array2) {
+            return !Array.isArray(array1)
+                   ? error("array required", array1)
+                   : array1.every(x => !Array.isArray(x))
+                   ? inner2(array1, array2)
+                   : array1.every(x => Array.isArray(x) && x.length > 0)
+                   ? array1.map(x => inner1(x, array2))
+                   : error("Invalid array");
+        }
+
+        function inner2(array1, array2) {
+            return isScalar || array2.every(x => !Array.isArray(x))
+                   ? decode1(array1, array2)
+                   : array2.every(x => Array.isArray(x) && x.length > 0)
+                   ? array2.map(x => inner2(array1, x))
+                   : error("Invalid array");
+        }
+
+        function decode1(array1, array2) {
+            const first = isScalar ? array2 : array2[0];
+            const maxRepeat = isScalar || array1.length === array2.length
+                              ? array1.length
+                              : error("length must be equal", array1.length);
+            let fold1 = first, val = first, base;
+
+            for(let i = 1; i < maxRepeat; i++) {
+                if(i < array1.length) {
+                    base = array1[i];
+                }
+                if(isScalar || i < array2.length) {
+                    val = isScalar ? array2 : array2[i];
+                }
+                fold1 = fold1 * base + val;
+            }
+            return fold1;
+        }
+        return inner1(array1, isScalar ? array2 : reduceDeepArray(array2));
+    }
+
+    function equalsDeepF(f, ...arrays) {
+        if(arrays.length <= 1) {
+            return true;
+        } else if(arrays.every(x => !Array.isArray(x))) {
+            return arrays.every(x => f(x, arrays[0]));
+        } else if(arrays.every(x => Array.isArray(x))) {
+            if(arrays.some(x => x.length !== arrays[0].length)) {
+                return false;
+            } else {
+                for(let i = 0; i < arrays[0].length; i++) {
+                    if(!equalsDeep(...arrays.map(x => x[i]))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    const equalsDeep = (...arrays) => equalsDeepF((x, y) => x === y, ...arrays);
+
     function reshape(anArray, ...shape) {
         function* walkArray(anArray) {
             if(Array.isArray(anArray)) {
@@ -474,14 +596,7 @@ function Arrycer(option) {
                : null;
     }
 
-    function iota(n) {
-        const result = [];
-
-        for(let i = 0; i < n; i++) {
-            result.push(i);
-        }
-        return result;
-    }
+    const iota = n => iterate(x => x + 1, 0, n);
 
     function sortIndex(anArray, cmp) {
         const cf = cmp ? cmp : (x, y) => x < y ? -1 : x > y ? 1 : 0;
@@ -711,8 +826,13 @@ function Arrycer(option) {
         reduceAll: reduceAll,
         reverseAxis: reverseAxis,
         reverseDeep: reverseDeep,
+        rotateAxis: rotateAxis,
         concatAxis: concatAxis,
         mapScalar: mapScalar,
+        replicateAxis: replicateAxis,
+        decode: decode,
+        equalsDeepF: equalsDeepF,
+        equalsDeep: equalsDeep,
         isEmpty: isEmpty,
         rank: rank,
         sortIndex: sortIndex,

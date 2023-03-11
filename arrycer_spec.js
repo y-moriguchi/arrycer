@@ -99,6 +99,15 @@ describe("arrycer", function() {
                 [[[4, 3], [2, 1], [4, 3]], [[2, 1], [4, 3], [2, 1]]]);
         });
 
+        it("rotateAxis", function() {
+            ok(A.rotateAxis([1, 2, 3], 2, 0), [3, 1, 2]);
+            ok(A.rotateAxis([[1, 2, 3], [4, 5, 6]], [2, 1], 1), [[3, 1, 2], [5, 6, 4]]);
+            ok(A.rotateAxis([[1, 2], [3, 4], [5, 6]], [2, 1], 0), [[5, 4], [1, 6], [3, 2]]);
+            ok(A.rotateAxis(A.reshape([1, 2, 3, 4, 5, 6, 7], 3, 3, 3), A.reshape([1, 2, -2], 3, 3), 1),
+                [[[4, 1, 6], [7, 2, 2], [1, 5, 3]], [[6, 3, 1], [2, 4, 4], [3, 7, 5]], [[1, 5, 3], [4, 6, 6], [5, 2, 7]]]);
+            ok(A.rotateAxis([1, 2, [3]], 2, 0), [[3], 1, 2]);
+        });
+
         it("reverseDeep", function() {
             ok(A.reverseDeep(2, 1), 2);
             ok(A.reverseDeep([1, 2, 3], 100), [3, 2, 1]);
@@ -129,6 +138,39 @@ describe("arrycer", function() {
             ok(A.mapScalar(2, addf, 7), 9);
             ok(A.mapScalar([1, 2], (x, y) => x.concat([y]), 3, 0), [1, 2, 3])
             ok(A.mapScalar([[1, 2], [3, 4]], addf, 3), [[4, 5], [6, 7]]);
+        });
+
+        it("replicateAxis", function() {
+            ok(A.replicateAxis([1, 2, 3], [1, 0, 1], 0), [1, 3]);
+            ok(A.replicateAxis([1, 2, 3], [0, 2, 1], 0), [2, 2, 3]);
+            ok(A.replicateAxis([1, 2, 3], [1, -2, 1], 0), [1, 0, 0, 3]);
+            ok(A.replicateAxis([1, 2, 3], [1, 1, -2, 1], 0), [1, 2, 0, 0, 3]);
+            ok(A.replicateAxis([[1, 2, 3], [4, 5, 6]], [0, 2, 1], 1), [[2, 2, 3], [5, 5, 6]]);
+            ok(A.replicateAxis([[1, 2], [3, 4], [5, 6]], [0, 2, 1], 0), [[3, 4], [3, 4], [5, 6]]);
+            ok(A.replicateAxis([[1, 2], [3, 4], [5, 6]], [1, -1, 1], 0), [[1, 2], [0, 0], [5, 6]]);
+            ok(A.replicateAxis([1, 2, 3], 2, 0), [1, 1, 2, 2, 3, 3]);
+            ok(A.replicateAxis([1, 2, 3], -2, 0), [0, 0, 0, 0, 0, 0]);
+        });
+
+        it("decode", function() {
+            ok(A.decode([2, 2, 2, 2], [1, 1, 1, 1]), 15);
+            ok(A.decode([2, 2, 2, 2], 1), 15);
+            ok(A.decode(A.reshape([7, 6, 5], 2, 2, 2), [2, 7]), [[19, 21], [17, 19]]);
+            ok(A.decode([7, 2], A.reshape([7, 6, 5], 2, 2, 2)), [[20, 17], [17, 20]]);
+        });
+
+        it("equalsDeep", function() {
+            ok(A.equalsDeep(), true);
+            ok(A.equalsDeep([1, 2]), true);
+            ok(A.equalsDeep([1, 2], [1, 2], [1, 2]), true);
+            ok(A.equalsDeep([1, 2], [1, 2], [2, 2]), false);
+            ok(A.equalsDeep([1, 2], [1, 2], [1, 2, 3]), false);
+            ok(A.equalsDeep([[1, 2], [3, 4]], [[1, 2], [3, 4]], [[1, 2], [3, 4]]), true);
+            ok(A.equalsDeep([[1, 2], [3, 4]], [[1, 2], [3, 4]], [[1, 2], [3, 5]]), false);
+            ok(A.equalsDeep([[1, 2], [3, 4]], [[1, 2], [3, 4]], [[1, 2], [3, 4, 5]]), false);
+            ok(A.equalsDeep([[1, 2], 3], [[1, 2], 3], [[1, 2], 3]), true);
+            ok(A.equalsDeep(1, 1, 1), true);
+            ok(A.equalsDeep(1, [1], 1), false);
         });
 
         it("reshape", function() {
@@ -258,6 +300,10 @@ describe("arrycer", function() {
             expect(() => A.reverseAxis([[1, 2], [3, 4]], 1, 2)).toThrow();
         });
 
+        it("rotateAxis", function() {
+            expect(() => A.rotateAxis(2, 1, 0)).toThrow();
+        });
+
         it("reverseDeep", function() {
             expect(() => A.reverseDeep([1, 2, [3, 4]], 100)).toThrow();
         });
@@ -272,6 +318,20 @@ describe("arrycer", function() {
             expect(() => A.mapDeep(addf, 100, [1, 2], [3, 4, 5])).toThrow();
             expect(() => A.mapDeep(addf, 100, [[1, 2], [3, 4]], [[1, 2, 3], [4, 5]])).toThrow();
             expect(() => A.mapDeep(addf, 100, [1, 2], 3)).toThrow();
+        });
+
+        it("replicateAxis", function() {
+            expect(() => A.replicateAxis([1, 2], [1, "a"], 0)).toThrow();
+            expect(() => A.replicateAxis([1, 2], [1, 0.5], 0)).toThrow();
+            expect(() => A.replicateAxis([1, 2], [1, 0, 0], 0)).toThrow();
+            expect(() => A.replicateAxis([1, 2], [1, 1, 1], 0)).toThrow();
+        });
+
+        it("decode", function() {
+            expect(() => A.decode(1, [1, 2], 0)).toThrow();
+            expect(() => A.decode([1, [2]], [1, 1], 0)).toThrow();
+            expect(() => A.decode([2, 2], [1, [1]], 0)).toThrow();
+            expect(() => A.decode([2, 2], [1, 1, 1])).toThrow();
         });
 
         it("reshape", function() {
