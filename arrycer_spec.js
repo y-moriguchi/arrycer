@@ -16,9 +16,18 @@ describe("arrycer", function() {
     const subf = (accum, x) => accum - x;
     const condf = (x, y, z) => x ? y : z;
     const concatf = (x, y) => x.concat(y);
+    const ok = (actual, expected) => expect(actual).toEqual(expected);
 
-    function ok(actual, expected) {
-        expect(actual).toEqual(expected);
+    function okMatrix(actual, expected) {
+        if(!Array.isArray(actual) && !Array.isArray(expected)) {
+            expect(actual).toBeCloseTo(expected, 7);
+        } else if(Array.isArray(actual) && Array.isArray(expected) && actual.length === expected.length) {
+            for(let i = 0; i < actual.length; i++) {
+                okMatrix(actual[i], expected[i]);
+            }
+        } else {
+            fail("Matrix shape is different");
+        }
     }
 
     beforeEach(function() {
@@ -265,6 +274,19 @@ describe("arrycer", function() {
             ok(A.drop([[1, 2, 3], [4, 5, 6], [7, 8, 9]], [2, -2]), [[7]]);
             ok(A.drop([[1, 2, 3], [4, 5, 6], [7, 8, 9]], [3, -3]), []);
         });
+
+        it("invertMatrix", function() {
+            okMatrix(A.invertMatrix([[3, 1], [5, 2]]), [[2, -1], [-5, 3]]);
+            okMatrix(A.invertMatrix([[3, 3, -5, -6], [1, 2, -3, -1], [2, 3, -5, -3], [-1, 0, 0, 1]]),
+                [[-0.5, 0, 0.5, -1.5], [1.5, 5, -4.5, 0.5], [1, 3, -3, 0], [-0.5, 0, 0.5, -0.5]]);
+            okMatrix(A.invertMatrix([[0, 2, 0], [0, 0, 1], [4, 0, 0]]), [[0, 0, 0.25], [0.5, 0, 0], [0, 1, 0]]);
+        });
+
+        it("solveMatrix", function() {
+            okMatrix(A.solveMatrix([[3, 1], [5, 2]], [4, 5]), [3, -5]);
+            okMatrix(A.solveMatrix([[0, 2, 0], [0, 0, 1], [4, 0, 0]], [1, 1, 1]), [0.25, 0.5, 1]);
+            okMatrix(A.solveMatrix(A.reshape([2, 8, 3, 3, 1, 5], 9, 2), [7, 6, 5, 8, 7, 6, 3, 4, 6]), [1.26553672, 0.56497175]);
+        });
     });
 
     describe("testing abnormal case", function() {
@@ -377,6 +399,26 @@ describe("arrycer", function() {
             expect(() => A.drop([[1, 2], [3, 4]], [1, [2, 3]])).toThrow();
             expect(() => A.drop([[1, 2], [3, 4]], [3, 1])).toThrow();
             expect(() => A.drop([[1, 2], [3, 4]], [1, -3])).toThrow();
+        });
+
+        it("invertMatrix", function() {
+            expect(() => A.invertMatrix(1)).toThrow();
+            expect(() => A.invertMatrix([1, 2])).toThrow();
+            expect(() => A.invertMatrix([1, [2]])).toThrow();
+            expect(() => A.invertMatrix([[1, 2], [1, 2, 3]])).toThrow();
+            expect(() => A.invertMatrix([[1, 2], [1, 2], [1, 2]])).toThrow();
+            expect(() => A.invertMatrix([[1, 1], [1, 1]])).toThrow();
+            expect(() => A.invertMatrix([[1, 1], [4, 4]])).toThrow();
+        });
+
+        it("solveMatrix", function() {
+            expect(() => A.solveMatrix(1, [1, 2])).toThrow();
+            expect(() => A.solveMatrix([1, 2], [1, 2])).toThrow();
+            expect(() => A.solveMatrix([1, [2]], [1, 2])).toThrow();
+            expect(() => A.solveMatrix([[1, 2], [1, 2, 3]], [1, 2])).toThrow();
+            expect(() => A.solveMatrix([[1, 2], [1, 2], [1, 2]], [1, 2])).toThrow();
+            expect(() => A.solveMatrix([[1, 1], [1, 1]], [1, 2])).toThrow();
+            expect(() => A.solveMatrix([[1, 1], [4, 4]], [1, 2])).toThrow();
         });
     });
 });

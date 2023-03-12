@@ -399,6 +399,7 @@ function Arrycer(option) {
     }
 
     const deepCopyF = (array1, f) => Array.isArray(array1) ? array1.map(x => deepCopyF(x, f)) : f(array1);
+    const deepcopy = array => deepCopyF(array, x => x);
 
     function replicateAxis(array1, vector, axis, pad) {
         const padF = pad === undef ? 0 : pad;
@@ -787,6 +788,219 @@ function Arrycer(option) {
                : error("Invalid argument", aVector[0]);
     }
 
+    const matrixLib = {
+        makeZero: (sizeI, sizeJ) => reshape([0], sizeI, sizeJ),
+        makeUnit: x => outer(iota(x), iota(x), (x, y) => x === y),
+
+        invertPermutation: function(matrix, permutation) {
+            const result = [];
+
+            for(let i = 0; i < permutation.length; i++) {
+                result[permutation[i]] = matrix[i];
+            }
+            return result;
+        },
+
+        columnPermutation: function(matrix, permutation) {
+            const source = deepcopy(matrix);
+            const result = [];
+
+            for(let i = 0; i < permutation.length; i++) {
+                result[i] = [];
+                for(let j = 0; j < permutation.length; j++) {
+                    result[i][permutation[j]] = source[i][j];
+                }
+            }
+            return result;
+        },
+
+        factorizeLU: function(matrix) {
+            const P = iota(matrix.length);
+            const A = deepcopy(matrix);
+            const L = matrixLib.makeZero(matrix.length, matrix.length);
+            const U = matrixLib.makeZero(matrix.length, matrix.length);
+
+            for(let k = 0; k < A.length; k++) {
+                if(A[k][k] === 0) {
+                    let m;
+
+                    for(m = 0; m < A.length; m++) {
+                        if(A[k][m] !== 0) {
+                            const tmp = P[m]; P[m] = P[k]; P[k] = tmp;
+
+                            for(let n = 0; n < A.length; n++) {
+                                const t2 = A[n][m]; A[n][m] = A[n][k]; A[n][k] = t2;
+                            }
+                            break;
+                        }
+                    }
+
+                    if(m >= matrix.length) {
+                        error("Matrix cannot solve");
+                    }
+                }
+
+                for(let i = 0; i < A[0].length; i++) {
+                    if(i < k) {
+                        L[i][k] = U[k][i] = 0;
+                    } else if(i === k) {
+                        L[i][k] = 1;
+                        U[k][i] = A[k][k];
+                    } else {
+                        L[i][k] = A[i][k] / A[k][k];
+                        U[k][i] = A[k][i];
+                    }
+                }
+
+                const tA = deepcopy(A);
+
+                for(let i = 0; i < A.length; i++) {
+                    A[i][k] = A[k][i] = 0;
+                }
+
+                for(let i = k + 1; i < A.length; i++) {
+                    for(let j = k + 1; j < A[0].length; j++) {
+                        A[i][j] = tA[i][j] - L[i][k] * U[k][j];
+                    }
+                }
+            }
+            return { P: P, L: L, U: U };
+        },
+
+        solve: function(matrix, vector) {
+            const y = [];
+            const result = [];
+            const lu = matrixLib.factorizeLU(matrix);
+            const V = vector.slice();
+
+            for(let i = 0; i < matrix.length; i++) {
+                y[i] = 0;
+                for(let j = 0; j < i; j++) {
+                    y[i] += lu.L[i][j] * y[j];
+                }
+                y[i] = (V[i] - y[i]);
+            }
+
+            for(let i = matrix.length - 1; i >= 0; i--) {
+                result[i] = 0;
+                for(let j = i; j < V.length; j++) {
+                    result[i] += lu.U[i][j] * result[j];
+                }
+                result[i] = (y[i] - result[i]) / lu.U[i][i];
+            }
+            return matrixLib.invertPermutation(result, lu.P);
+        },
+
+        solveGaussJordan: function(matrix, source) {
+            const permutation = iota(matrix.length);
+            const m = deepcopy(matrix);
+            const v = deepcopy(source);
+
+            for(let i = 0; i < m.length; i++) {
+                let val = m[i][i];
+
+                if(val === 0) {
+                    let j;
+
+                    for(j = 0; j < matrix.length; j++) {
+                        if(matrix[permutation[j]][i] !== 0) {
+                            const tmp = permutation[j];
+                            permutation[j] = permutation[i];
+                            permutation[i] = tmp;
+
+                            const t2 = m[j];
+                            m[j] = m[i];
+                            m[i] = t2;
+                            val = m[i][i];
+                            break;
+                        }
+                    }
+                }
+
+                for(let j = 0; j < m[i].length; j++) {
+                    if(i !== j) {
+                        const elm = m[j][i] / val;
+
+                        for(let k = 0; k < m.length; k++) {
+                            m[j][k] = m[j][k] - (m[i][k] * elm);
+                        }
+
+                        if(Array.isArray(v[0])) {
+                            for(let k = 0; k < v.length; k++) {
+                                v[j][k] = v[j][k] - (v[i][k] * elm);
+                            }
+                        } else {
+                            v[j] = v[j] - (v[i] * elm);
+                        }
+                    }
+                }
+
+                for(let j = 0; j < m[i].length; j++) {
+                    if(i === j) {
+                        for(let k = 0; k < m.length; k++) {
+                            m[j][k] = i === k ? 1 : m[j][k] / val;
+                        }
+
+                        if(Array.isArray(v[0])) {
+                            for(let k = 0; k < v.length; k++) {
+                                v[j][k] = v[j][k] / val;
+                            }
+                        } else {
+                            v[j] = v[j] / val;
+                        }
+                    }
+                }
+            }
+
+            if(!m.every((x, i) => x.every((y, j) => y === (i === j ? 1 : 0)))) {
+                error("Matrix cannot invert");
+            }
+            return matrixLib.columnPermutation(v, permutation);
+        },
+
+        leastSquare: function(matrix, vector) {
+            const normalMatrix = [];
+            const normalVector = [];
+
+            for(let i = 0; i < matrix[0].length; i++) {
+                normalMatrix[i] = [];
+                for(let j = 0; j < matrix[0].length; j++) {
+                    normalMatrix[i][j] = 0;
+                    for(let k = 0; k < matrix.length; k++) {
+                        normalMatrix[i][j] += matrix[k][i] * matrix[k][j];
+                    }
+                }
+            }
+
+            for(let i = 0; i < matrix[0].length; i++) {
+                normalVector[i] = 0;
+                for(let k = 0; k < matrix.length; k++) {
+                    normalVector[i] += matrix[k][i] * vector[k];
+                }
+            }
+            return matrixLib.solve(normalMatrix, normalVector);
+        }
+    };
+
+    function invertMatrix(matrix) {
+        const rankm = rank(matrix);
+
+        if(rankm === null || rankm.length !== 2 || rankm[0] !== rankm[1]) {
+            error("Diagonal matrix required");
+        }
+        return matrixLib.solveGaussJordan(matrix, matrixLib.makeUnit(matrix.length));
+    }
+
+    function solveMatrix(matrix, vector) {
+        const rankm = rank(matrix);
+        const rankv = rank(vector);
+
+        if(rankm === null || rankv === null || rankm.length !== 2 || rankv.length !== 1 || rankm[0] !== rankv[0]) {
+            error("Invalid matrix shape");
+        }
+        return rankm[0] === rankm[1] ? matrixLib.solve(matrix, vector) : matrixLib.leastSquare(matrix, vector);
+    }
+
     function expandObject(a, b, f) {
         for(let i in b) {
             if(b.hasOwnProperty(i)) {
@@ -842,7 +1056,9 @@ function Arrycer(option) {
         atArray: atArray,
         sliceDeep: sliceDeep,
         take: take,
-        drop: drop
+        drop: drop,
+        invertMatrix: invertMatrix,
+        solveMatrix: solveMatrix
     };
     return mergeObject(me, expandable);
 }
