@@ -276,7 +276,7 @@ function Arrycer(option) {
             return rhoVector === null
                    ? error("Invalid array")
                    : axes.some(x => x >= rhoVector.length)
-                   ? error("Invalid axis", axis)
+                   ? error("Invalid axis", axes)
                    : rev(array1, 0);
         }
     }
@@ -441,6 +441,38 @@ function Arrycer(option) {
 
     const reduceDeepArray = a => reduceDeep(a, (accum, x) => accum.concat([x]), []);
 
+    function scanAxisLR(name) {
+        return function(anArray, f, axis, init, depth) {
+            const depth1 = depth === undef ? Number.Infinity : depth;
+
+            function inner(anArray, level) {
+                const f1 = (accum, x) => accum === innerInit
+                                         ? [x]
+                                         : accum.length === 0
+                                         ? [mapDeep(f, depth1 - level - 1, deepCopyF(anArray[0], x => init), inner(x, level + 1))]
+                                         : accum.concat([mapDeep(f, depth1 - level - 1, accum[accum.length - 1], inner(x, level + 1))]);
+
+                return !Array.isArray(anArray) || level === depth
+                       ? anArray
+                       : anArray.length === 0
+                       ? error("Array must not be empty")
+                       : level !== depth - 1 && !(anArray.every(x => !Array.isArray(x)) || anArray.every(x => Array.isArray(x) && x.length === anArray[0].length))
+                       ? error("Invalid array")
+                       : level === axis
+                       ? anArray[name](f1, init === undef ? innerInit : [])
+                       : anArray.map(x => inner(x, level + 1));
+            }
+            return !Number.isSafeInteger(axis) || axis < 0
+                   ? error("Invalid axis", axis)
+                   : typeof depth === "number" && (!Number.isSafeInteger(depth) || depth < 0)
+                   ? error("Invalid depth", depth)
+                   : inner(anArray, 0);
+        }
+    }
+
+    const scanAxis = scanAxisLR("reduce");
+    const scanAxisLast = (anArray, f, axis, init) => reverseAxis(scanAxisLR("reduceRight")(anArray, f, axis, init), axis);
+
     function decode(array1, array2) {
         const isScalar = !Array.isArray(array2);
 
@@ -481,6 +513,27 @@ function Arrycer(option) {
             return fold1;
         }
         return inner1(array1, isScalar ? array2 : reduceDeepArray(array2));
+    }
+
+    function encode(array1, array2) {
+        function pair(x, enc) {
+            return {
+                result: x % enc,
+                next: Math.floor(x / enc)
+            };
+        }
+
+        const r1 = rank(array1);
+        const r2 = rank(array2);
+        const axis = r1 === null || r2 === null
+                     ? error("Invalid array")
+                     : Math.max(r1.length, r2.length) < 2
+                     ? 0
+                     : Math.max(r1.length, r2.length) - 2;
+        const out = outer(array1, array2, (x, y) => ({ x: x, y: y }));
+        const scan = scanAxisLast(out, (accum, x) => accum === null ? pair(x.y, x.x) : pair(accum.next, x.x), axis, null);
+
+        return mapDeep(x => x.result, Number.Infinity, scan);
     }
 
     function equalsDeepF(f, ...arrays) {
@@ -1044,7 +1097,10 @@ function Arrycer(option) {
         concatAxis: concatAxis,
         mapScalar: mapScalar,
         replicateAxis: replicateAxis,
+        scanAxis: scanAxis,
+        scanAxisLast: scanAxisLast,
         decode: decode,
+        encode: encode,
         equalsDeepF: equalsDeepF,
         equalsDeep: equalsDeep,
         isEmpty: isEmpty,

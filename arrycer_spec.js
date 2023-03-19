@@ -161,11 +161,54 @@ describe("arrycer", function() {
             ok(A.replicateAxis([1, 2, 3], -2, 0), [0, 0, 0, 0, 0, 0]);
         });
 
+        it("scanAxis", function() {
+            ok(A.scanAxis([1, 2, 3], (accum, x) => accum + x, 0), [1, 3, 6]);
+            ok(A.scanAxis([1, 2, 3], (accum, x) => accum - x, 0), [1, -1, -4]);
+            ok(A.scanAxis([1, 2, 3], (accum, x) => accum - x, 0, 6), [5, 3, 0]);
+            ok(A.scanAxis([[1, 2, 3], [4, 5, 6], [7, 8, 9]], (accum, x) => accum - x, 0), [[1, 2, 3], [-3, -3, -3], [-10, -11, -12]])
+            ok(A.scanAxis([[1, 2, 3], [4, 5, 6], [7, 8, 9]], (accum, x) => accum - x, 1), [[1, -1, -4], [4, -1, -7], [7, -1, -10]])
+            ok(A.scanAxis([[1, 2], [3, 4], [5, 6]], (accum, x) => accum.concat(x), 0, undefined, 1), [[1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5, 6]]);
+            ok(A.scanAxis([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], (accum, x) => accum.concat(x), 0, undefined, 2), [[[1, 2], [3, 4]], [[1, 2, 5, 6], [3, 4, 7, 8]]]);
+            ok(A.scanAxis([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], (accum, x) => accum.concat(x), 1, undefined, 2), [[[1, 2], [1, 2, 3, 4]], [[5, 6], [5, 6, 7, 8]]]);
+            ok(A.scanAxis([[1, 2], [3, 4], [5]], (accum, x) => accum.concat(x), 0, undefined, 1), [[1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5]]);
+        });
+
+        it("scanAxisLast", function() {
+            ok(A.scanAxisLast([1, 2, 3], (accum, x) => accum + x, 0), [6, 5, 3]);
+            ok(A.scanAxisLast([1, 2, 3], (accum, x) => accum - x, 0), [0, 1, 3]);
+            ok(A.scanAxisLast([1, 2, 3], (accum, x) => accum - x, 0, 6), [0, 1, 3]);
+            ok(A.scanAxisLast([[1, 2, 3], [4, 5, 6], [7, 8, 9]], (accum, x) => accum - x, 0), [[2, 1, 0], [3, 3, 3], [7, 8, 9]]);
+            ok(A.scanAxisLast([[1, 2, 3], [4, 5, 6], [7, 8, 9]], (accum, x) => accum - x, 1), [[0, 1, 3], [-3, 1, 6], [-6, 1, 9]]);
+        });
+
         it("decode", function() {
             ok(A.decode([2, 2, 2, 2], [1, 1, 1, 1]), 15);
             ok(A.decode([2, 2, 2, 2], 1), 15);
             ok(A.decode(A.reshape([7, 6, 5], 2, 2, 2), [2, 7]), [[19, 21], [17, 19]]);
             ok(A.decode([7, 2], A.reshape([7, 6, 5], 2, 2, 2)), [[20, 17], [17, 20]]);
+        });
+
+        it("encode", function() {
+            ok(A.encode([1760, 3, 12], 75), [2, 0, 3]);
+            ok(A.encode([1760, 3, 12], 75.5), [2, 0, 3.5]);
+            ok(A.encode([2, 2, 2], [1, 2, 3]), [[0, 0, 0], [0, 1, 1], [1, 0, 1]]);
+            ok(A.encode(A.reshape([1, 2, 3], 3, 3), 15), [[0, 1, 1], [0, 1, 2], [0, 1, 0]]);
+            ok(A.encode(A.reshape([7, 6, 5, 3, 4, 6, 2, 7], 3, 3, 3), 15),
+                [[[2, 0, 0], [1, 2, 2], [1, 1, 1]], [[0, 0, 1], [2, 2, 0], [1, 1, 3]], [[0, 1, 0], [2, 0, 3], [1, 3, 0]]]);
+            ok(A.encode(A.reshape([7, 6, 5, 3, 4, 6, 2, 7], 2, 2, 2, 2), 15), [[[[3, 5], [0, 0]], [[3, 2], [1, 1]]], [[[3, 5], [0, 0]], [[3, 2], [1, 1]]]]);
+            ok(A.encode(A.reshape([7, 6, 5, 3, 4, 6, 2, 7], 2, 2, 2, 2), [15, 16]),
+                [[[[[3, 3], [5, 5]], [[0, 1], [0, 1]]], [[[3, 0], [2, 2]], [[1, 0], [1, 2]]]],
+                 [[[[3, 3], [5, 5]], [[0, 1], [0, 1]]], [[[3, 0], [2, 2]], [[1, 0], [1, 2]]]]]);
+            ok(A.encode([2, 2, 2], A.reshape([3, 4, 6, 2, 7], 3, 3)), [[[0, 1, 1], [0, 1, 0], [1, 1, 0]], [[1, 0, 1], [1, 1, 1], [0, 1, 1]], [[1, 0, 0], [0, 1, 1], [0, 0, 0]]]);
+            ok(A.encode(A.reshape([7, 6, 5], 3, 3), A.reshape([3, 4, 6, 2, 7], 3, 3)),
+                [[[[0, 0, 0], [0, 0, 0], [0, 0, 0]], [[0, 0, 0], [0, 0, 0], [0, 0, 0]], [[0, 0, 0], [0, 0, 0], [0, 0, 0]]],
+                    [[[0, 0, 0], [0, 1, 0], [0, 0, 0]], [[0, 0, 1], [0, 1, 0], [0, 1, 0]], [[0, 0, 1], [0, 1, 0], [0, 1, 0]]],
+                    [[[3, 4, 6], [2, 0, 3], [4, 6, 2]], [[3, 4, 0], [2, 1, 3], [4, 0, 2]], [[3, 4, 1], [2, 2, 3], [4, 1, 2]]]]);
+            ok(A.encode(A.reshape([7, 6, 5], 2, 2, 2), A.reshape([3, 4, 6], 2, 2, 2)),
+                [[[[[[0, 0], [1, 0]], [[0, 1], [0, 0]]], [[[0, 0], [0, 0]], [[0, 0], [0, 0]]]],
+                  [[[[3, 4], [1, 3]], [[4, 1], [3, 4]]], [[[3, 4], [6, 3]], [[4, 6], [3, 4]]]]],
+                 [[[[[0, 0], [0, 0]], [[0, 0], [0, 0]]], [[[0, 0], [1, 0]], [[0, 1], [0, 0]]]],
+                  [[[[3, 4], [6, 3]], [[4, 6], [3, 4]]], [[[3, 4], [0, 3]], [[4, 0], [3, 4]]]]]]);
         });
 
         it("equalsDeep", function() {
@@ -349,11 +392,26 @@ describe("arrycer", function() {
             expect(() => A.replicateAxis([1, 2], [1, 1, 1], 0)).toThrow();
         });
 
+        it("scanAxis", function() {
+            expect(() => A.scanAxis([1, 2, 3], (accum, x) => accum + x, -1)).toThrow();
+            expect(() => A.scanAxis([1, 2, 3], (accum, x) => accum + x, 0.2)).toThrow();
+            expect(() => A.scanAxis([1, 2, 3], (accum, x) => accum + x, "1")).toThrow();
+            expect(() => A.scanAxis([1, [2], 3], (accum, x) => accum + x, 0)).toThrow();
+            expect(() => A.scanAxis([[1, 2], [2], [3, 4]], (accum, x) => accum + x, 0)).toThrow();
+            expect(() => A.scanAxis([1, 2, 3], (accum, x) => accum + x, 0, 1, -1)).toThrow();
+            expect(() => A.scanAxis([1, 2, 3], (accum, x) => accum + x, 0, 1, 1.2)).toThrow();
+        });
+
         it("decode", function() {
             expect(() => A.decode(1, [1, 2], 0)).toThrow();
             expect(() => A.decode([1, [2]], [1, 1], 0)).toThrow();
             expect(() => A.decode([2, 2], [1, [1]], 0)).toThrow();
             expect(() => A.decode([2, 2], [1, 1, 1])).toThrow();
+        });
+
+        it("encode", function() {
+            expect(() => A.encode([1, [2]], 3)).toThrow();
+            expect(() => A.encode([1, 2], [1, [2]])).toThrow();
         });
 
         it("reshape", function() {
