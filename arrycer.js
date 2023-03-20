@@ -20,6 +20,14 @@ function Arrycer(option) {
         }
     }
 
+    function defaultValue(x) {
+        return typeof x === "number"
+               ? 0
+               : typeof x === "string"
+               ? ""
+               : "";
+    }
+
     function reduceDeep(anArray, f, init, depth) {
         if(!Array.isArray(anArray)) {
             return anArray;
@@ -43,12 +51,12 @@ function Arrycer(option) {
         }
     }
 
-    function inner(array1, array2, f, g, initf, initg) {
+    function inner(array1, array2, f, g, initf, initg, depth) {
         const initf1 = initf === undef ? innerInit : initf;
         const initg1 = initg === undef ? innerInit : initg;
         const f1 = (accum, x) => accum === innerInit ? x : f(accum, x);
         const g1 = (accum, x) => accum === innerInit ? x : g(accum, x);
-        const depth1 = Number.MAX_SAFE_INTEGER;
+        const depth1 = depth === undef ? Number.MAX_SAFE_INTEGER : depth;
 
         function innerArray1(anArray, cols, d) {
             return d !== 0 && anArray.every(x => Array.isArray(x))
@@ -559,9 +567,9 @@ function Arrycer(option) {
 
     const equalsDeep = (...arrays) => equalsDeepF((x, y) => x === y, ...arrays);
 
-    function reshape(anArray, ...shape) {
+    function makeGenerator(anArray, predArray) {
         function* walkArray(anArray) {
-            if(Array.isArray(anArray)) {
+            if(predArray(anArray)) {
                 for(let i = 0; i < anArray.length; i++) {
                     yield* walkArray(anArray[i]);
                 }
@@ -570,28 +578,28 @@ function Arrycer(option) {
             }
         }
 
-        function makeGenerator(anArray) {
-            let walk = null;
+        let walk = null;
 
-            function* inner() {
-                while(true) {
-                    if(walk === null) {
-                        walk = walkArray(anArray);
+        function* inner() {
+            while(true) {
+                if(walk === null) {
+                    walk = walkArray(anArray);
+                } else {
+                    const result = walk.next();
+
+                    if(result.done) {
+                        walk = null;
                     } else {
-                        const result = walk.next();
-
-                        if(result.done) {
-                            walk = null;
-                        } else {
-                            yield result.value;
-                        }
+                        yield result.value;
                     }
                 }
-            };
-            return inner();
-        }
+            }
+        };
+        return inner();
+    }
 
-        const generateObject = makeGenerator(anArray);
+    function reshape(anArray, ...shape) {
+        const generateObject = makeGenerator(anArray, Array.isArray);
         const genf = () => generateObject.next().value;
 
         function inner(shape) {
@@ -613,12 +621,12 @@ function Arrycer(option) {
         }
     }
 
-    function isEmpty(anArray) {
-        if(!Array.isArray(anArray)) {
+    function isEmpty1(anArray, predArray) {
+        if(!predArray(anArray)) {
             return false;
         } else {
             for(let i = 0; i < anArray.length; i++) {
-                if(!isEmpty(anArray[i])) {
+                if(!isEmpty(anArray[i], predArray)) {
                     return false;
                 }
             }
@@ -626,30 +634,47 @@ function Arrycer(option) {
         }
     }
 
-    function rank(anObject) {
+    const isEmpty = anArray => isEmpty1(anArray, Array.isArray);
+
+    function first1(anArray, predArray) {
+        return !predArray(anArray)
+               ? anArray
+               : predArray(anArray) && !isEmpty(anArray, predArray)
+               ? makeGenerator(anArray, predArray).next().value
+               : innerInit;
+    }
+
+    function first(anArray) {
+        const result = first1(anArray, Array.isArray);
+
+        return result === innerInit ? error("Array must not be empty") : result;
+    }
+
+    function rank1(anObject, predArray) {
         function concatIsNotNull(a1, obj1) {
             return obj1 === null ? null : a1.concat(obj1);
         }
 
         function isProper(anObject) {
-            return !Array.isArray(anObject) ||
-                   anObject.every(x => !Array.isArray(x)) ||
-                   anObject.every(x => Array.isArray(x) && isProper(x));
+            return !predArray(anObject) ||
+                   anObject.every(x => !predArray(x)) ||
+                   anObject.every(x => predArray(x) && isProper(x));
         }
 
         return !isProper(anObject)
                ? null
-               : !Array.isArray(anObject)
+               : !predArray(anObject)
                ? []
                : anObject.length === 0
                ? [0]
-               : anObject.every(x => !Array.isArray(x))
+               : anObject.every(x => !predArray(x))
                ? [anObject.length]
-               : anObject.every(x => Array.isArray(x) && x.length === anObject[0].length)
+               : anObject.every(x => predArray(x) && x.length === anObject[0].length)
                ? concatIsNotNull([anObject.length], rank(anObject[0]))
                : null;
     }
 
+    const rank = anObject => rank1(anObject, Array.isArray);
     const iota = n => iterate(x => x + 1, 0, n);
 
     function sortIndex(anArray, cmp) {
@@ -1104,6 +1129,7 @@ function Arrycer(option) {
         equalsDeepF: equalsDeepF,
         equalsDeep: equalsDeep,
         isEmpty: isEmpty,
+        first: first,
         rank: rank,
         sortIndex: sortIndex,
         sortIndexDesc: sortIndexDesc,

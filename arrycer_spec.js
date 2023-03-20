@@ -17,6 +17,7 @@ describe("arrycer", function() {
     const condf = (x, y, z) => x ? y : z;
     const concatf = (x, y) => x.concat(y);
     const ok = (actual, expected) => expect(actual).toEqual(expected);
+    const undef = void 0;
 
     function okMatrix(actual, expected) {
         if(!Array.isArray(actual) && !Array.isArray(expected)) {
@@ -45,6 +46,7 @@ describe("arrycer", function() {
             ok(A.inner(A.reshape([1, 2, 3], 2, 3, 4), A.reshape([2, 3, 4], 4, 3, 2), addf, mulf),
                 [[[[14, 21], [28, 14], [21, 28]], [[16, 24], [32, 16], [24, 32]], [[18, 27], [36, 18], [27, 36]]],
                  [[[14, 21], [28, 14], [21, 28]], [[16, 24], [32, 16], [24, 32]], [[18, 27], [36, 18], [27, 36]]]]);
+            ok(A.inner([[1, 2], [3, 4]], [[5, 6], [7, 8]], (accum, x) => accum.concat(x), (accum, x) => accum.concat(x), [], [], 0), [[1, 5], [2, 7], [3, 6], [4, 8]]);
         });
 
         it("outer", function() {
@@ -238,6 +240,11 @@ describe("arrycer", function() {
             ok(A.isEmpty([[], [[], [2]], []]), false);
         });
 
+        it("first", function() {
+            ok(A.first([[[1], 2, [3, 4]]]), 1);
+            ok(A.first(1), 1);
+        });
+
         it("rank", function() {
             ok(A.rank(2), []);
             ok(A.rank([1, 2]), [2]);
@@ -417,6 +424,10 @@ describe("arrycer", function() {
         it("reshape", function() {
             expect(() => A.reshape(2, 1, 2)).toThrow();
             expect(() => A.reshape([], 1, 2)).toThrow();
+        });
+
+        it("first", function() {
+            expect(() => A.first([[[[], [], []]]])).toThrow(); 
         });
 
         it("sortIndex", function() {
