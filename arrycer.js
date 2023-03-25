@@ -681,65 +681,35 @@ function Arrycer(option) {
         const cf = cmp ? cmp : (x, y) => x < y ? -1 : x > y ? 1 : 0;
         let indices;
 
-        function swap(lo, hi) {
-            const t = indices[lo];
+        function merge(indices1, indices2) {
+            const result = [];
 
-            indices[lo] = indices[hi]
-            indices[hi] = t;
-        }
-
-        function partition(base, n) {
-            let lo = base;
-            let hi = n + base - 1;
-            let m = Math.floor((hi - lo) / 2) + base;
-
-            while(true) {
-                while(cf(anArray[indices[lo]], anArray[indices[m]]) < 0) {
-                    cover(2);
-                    lo++;
-                }
-
-                while(cf(anArray[indices[m]], anArray[indices[hi]]) < 0) {
-                    cover(3);
-                    hi--;
-                }
-
-                if(lo >= hi) {
-                    cover(4);
-                    return hi + 1;
+            while(indices1.length > 0 || indices2.length > 0) {
+                if(indices1.length === 0) {
+                    cover(1); result.push(indices2.shift());
+                } else if(indices2.length === 0) {
+                    cover(2); result.push(indices1.shift());
+                } else if(cf(anArray[indices1[0]], anArray[indices2[0]]) <= 0) {
+                    cover(3); result.push(indices1.shift());
                 } else {
-                    swap(lo, hi);
-                    if(lo === m) {
-                        cover(5);
-                        m = hi;
-                    } else if(hi === m) {
-                        cover(6);
-                        m = lo;
-                    }
-                    lo++;
-                    hi--;
+                    cover(4); result.push(indices2.shift());
                 }
             }
+            return result;
         }
 
-        function step(base, n) {
-            if(n <= 1) {
-                return;
+        function mergeSort(indices) {
+            if(indices.length <= 1) {
+                return indices;
             } else {
-                const p = partition(base, n);
+                const last = indices.splice(Math.floor(indices.length / 2));
 
-                step(base, p - base);
-                step(p, base + n - p);
+                return merge(mergeSort(indices), mergeSort(last));
             }
         }
-
-        if(!Array.isArray(anArray)) {
-            error("Array required", anArray);
-        } else {
-            indices = iota(anArray.length);
-            step(0, anArray.length);
-            return indices;
-        }
+        return !Array.isArray(anArray)
+               ? error("Array required", anArray)
+               : mergeSort(iota(anArray.length));
     }
 
     function sortIndexDesc(anArray) {

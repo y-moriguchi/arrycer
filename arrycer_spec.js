@@ -265,17 +265,16 @@ describe("arrycer", function() {
             ok(C.sortIndexDesc([83, 77, 72, 91, 85]), [3, 4, 0, 1, 2]);
             ok(C.sortIndex([72, 77, 83, 85, 91]), [0, 1, 2, 3, 4]);
             ok(C.sortIndex([91, 85, 83, 77, 72]), [4, 3, 2, 1, 0]);
-            ok(C.sortIndex([83, 85, 72, 91, 85]), [2, 0, 4, 1, 3]);
+            ok(C.sortIndex([83, 85, 72, 91, 85]), [2, 0, 1, 4, 3]);
             ok(C.sortIndex([91, 85, 83, 72, 77]), [3, 4, 2, 1, 0]);
             ok(C.sortIndex([91]), [0]);
             ok(C.sortIndex([91, 72]), [1, 0]);
             ok(C.sortIndex([91, 72, 83]), [1, 2, 0]);
 
+            expect(cover.indexOf(1) >= 0).toBeTruthy();
             expect(cover.indexOf(2) >= 0).toBeTruthy();
             expect(cover.indexOf(3) >= 0).toBeTruthy();
             expect(cover.indexOf(4) >= 0).toBeTruthy();
-            expect(cover.indexOf(5) >= 0).toBeTruthy();
-            expect(cover.indexOf(6) >= 0).toBeTruthy();
         });
 
         it("subarray", function() {
