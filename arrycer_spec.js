@@ -302,6 +302,10 @@ describe("arrycer", function() {
             ok(A.atArray([1, 2, 3], [[0, 1], [2, -1]]), [[1, 2], [3, 3]]);
         });
 
+        it("member", function() {
+            ok(A.member([[2, 8], [7, -1]], [2, 7]), [[1, 0], [1, 0]]);
+        });
+
         it("sliceDeep", function() {
             ok(A.sliceDeep([1, 2, 3], []), [1, 2, 3]);
             ok(A.sliceDeep([[1, 2, 3], [4, 5, 6], [7, 8, 9]], [1, -2]), [[5, 6], [8, 9]]);

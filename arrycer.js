@@ -787,6 +787,10 @@ function Arrycer(option) {
         return mapDeep(x => aVector.at(x), Number.MAX_SAFE_INTEGER, anArray);
     }
 
+    function member(anArray, aVector) {
+        return map(x => aVector.indexOf(x) >= 0 ? 1 : 0, anArray);
+    }
+
     function sliceDeep(anArray, aVector) {
         return aVector.length === 0
                ? anArray
@@ -1120,6 +1124,7 @@ function Arrycer(option) {
         subarray: subarray,
         indexOfArray: indexOfArray,
         atArray: atArray,
+        member: member,
         sliceDeep: sliceDeep,
         take: take,
         drop: drop,
