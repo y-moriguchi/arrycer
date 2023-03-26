@@ -46,7 +46,7 @@ describe("arrycer", function() {
             ok(A.inner(A.reshape([1, 2, 3], 2, 3, 4), A.reshape([2, 3, 4], 4, 3, 2), addf, mulf),
                 [[[[14, 21], [28, 14], [21, 28]], [[16, 24], [32, 16], [24, 32]], [[18, 27], [36, 18], [27, 36]]],
                  [[[14, 21], [28, 14], [21, 28]], [[16, 24], [32, 16], [24, 32]], [[18, 27], [36, 18], [27, 36]]]]);
-            ok(A.inner([[1, 2], [3, 4]], [[5, 6], [7, 8]], (accum, x) => accum.concat(x), (accum, x) => accum.concat(x), [], [], 0), [[1, 5], [2, 7], [3, 6], [4, 8]]);
+            ok(A.inner([[1, 2], [3, 4]], [[5, 6], [7, 8]], (accum, x) => accum.concat(x), (accum, x) => accum.concat(x), [], [], 1, 1), [1, 2, 5, 6, 3, 4, 7, 8]);
         });
 
         it("outer", function() {
@@ -97,8 +97,8 @@ describe("arrycer", function() {
             ok(A.reduceAll([2, 3], addf, 1), 6);
             ok(A.reduceAll([[2, 3], [4, [5, 6], 7], 8, [9, 10]], addf, 1), 55);
             ok(A.reduceAll([[2, 3], [4, [5, 6], 7], 8, [9, 10]], addf), 54);
-            ok(A.reduceAll([], addf), undefined);
-            ok(A.reduceAll([[[]], [], []], addf), undefined);
+            ok(A.reduceAll([], addf), undef);
+            ok(A.reduceAll([[[]], [], []], addf), undef);
         });
 
         it("reverseAxis", function() {
@@ -169,10 +169,10 @@ describe("arrycer", function() {
             ok(A.scanAxis([1, 2, 3], (accum, x) => accum - x, 0, 6), [5, 3, 0]);
             ok(A.scanAxis([[1, 2, 3], [4, 5, 6], [7, 8, 9]], (accum, x) => accum - x, 0), [[1, 2, 3], [-3, -3, -3], [-10, -11, -12]])
             ok(A.scanAxis([[1, 2, 3], [4, 5, 6], [7, 8, 9]], (accum, x) => accum - x, 1), [[1, -1, -4], [4, -1, -7], [7, -1, -10]])
-            ok(A.scanAxis([[1, 2], [3, 4], [5, 6]], (accum, x) => accum.concat(x), 0, undefined, 1), [[1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5, 6]]);
-            ok(A.scanAxis([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], (accum, x) => accum.concat(x), 0, undefined, 2), [[[1, 2], [3, 4]], [[1, 2, 5, 6], [3, 4, 7, 8]]]);
-            ok(A.scanAxis([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], (accum, x) => accum.concat(x), 1, undefined, 2), [[[1, 2], [1, 2, 3, 4]], [[5, 6], [5, 6, 7, 8]]]);
-            ok(A.scanAxis([[1, 2], [3, 4], [5]], (accum, x) => accum.concat(x), 0, undefined, 1), [[1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5]]);
+            ok(A.scanAxis([[1, 2], [3, 4], [5, 6]], (accum, x) => accum.concat(x), 0, undef, 1), [[1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5, 6]]);
+            ok(A.scanAxis([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], (accum, x) => accum.concat(x), 0, undef, 2), [[[1, 2], [3, 4]], [[1, 2, 5, 6], [3, 4, 7, 8]]]);
+            ok(A.scanAxis([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], (accum, x) => accum.concat(x), 1, undef, 2), [[[1, 2], [1, 2, 3, 4]], [[5, 6], [5, 6, 7, 8]]]);
+            ok(A.scanAxis([[1, 2], [3, 4], [5]], (accum, x) => accum.concat(x), 0, undef, 1), [[1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5]]);
         });
 
         it("scanAxisLast", function() {
@@ -342,6 +342,10 @@ describe("arrycer", function() {
         it("inner", function() {
             expect(() => A.inner([1, [2, 3]], [4, 5], addf, mulf)).toThrow();
             expect(() => A.inner([1, 2], [1, [2, 3]], addf, mulf)).toThrow();
+            expect(() => A.inner([1, 2], [2, 3], addf, mulf, undef, undef, 0, 1)).toThrow();
+            expect(() => A.inner([1, 2], [2, 3], addf, mulf, undef, undef, 1.1, 1)).toThrow();
+            expect(() => A.inner([1, 2], [2, 3], addf, mulf, undef, undef, 1, 0)).toThrow();
+            expect(() => A.inner([1, 2], [2, 3], addf, mulf, undef, undef, 1, 1.1)).toThrow();
         });
 
         it("T", function() {

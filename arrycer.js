@@ -33,7 +33,7 @@ function Arrycer(option) {
             return anArray;
         } else if(anArray.length === 0) {
             return [];
-        } else if(anArray.every(x => !Array.isArray(x))) {
+        } else if(depth === 0 || anArray.every(x => !Array.isArray(x))) {
             return anArray.reduce(f, init);
         } else if(anArray.every(x => x.length === 0)) {
             return [];
@@ -51,26 +51,35 @@ function Arrycer(option) {
         }
     }
 
-    function inner(array1, array2, f, g, initf, initg, depth) {
+    function inner(array1, array2, f, g, initf, initg, depthf, depthg) {
         const initf1 = initf === undef ? innerInit : initf;
         const initg1 = initg === undef ? innerInit : initg;
         const f1 = (accum, x) => accum === innerInit ? x : f(accum, x);
         const g1 = (accum, x) => accum === innerInit ? x : g(accum, x);
-        const depth1 = depth === undef ? Number.MAX_SAFE_INTEGER : depth;
+        const depth1 = depthf === undef
+              ? Number.MAX_SAFE_INTEGER
+              : !Number.isSafeInteger(depthf) || depthf < 1
+              ? error("Invalid depth", depthf)
+              : depthf;
+        const depth2 = depthg === undef
+              ? Number.MAX_SAFE_INTEGER
+              : !Number.isSafeInteger(depthg) || depthg < 1
+              ? error("Invalid depth", depthg)
+              : depthg;
 
         function innerArray1(anArray, cols, d) {
-            return d !== 0 && anArray.every(x => Array.isArray(x))
+            return d > 1 && anArray.every(x => Array.isArray(x))
                    ? anArray.map(x => innerArray1(x, cols, d - 1))
-                   : d === 0 || anArray.every(x => !Array.isArray(x))
-                   ? innerArray2(anArray, cols, depth1)
+                   : d === 1 || anArray.every(x => !Array.isArray(x))
+                   ? innerArray2(anArray, cols, depth2)
                    : error("Invalid array", anArray);
         }
 
         function innerArray2(singleArray1, anArray, d) {
-            return d !== 0 && anArray.every(x => Array.isArray(x))
+            return d > 1 && anArray.every(x => Array.isArray(x))
                    ? anArray.map(x => innerArray2(singleArray1, x, d - 1))
-                   : d === 0 || anArray.every(x => !Array.isArray(x))
-                   ? reduceDeep([singleArray1, anArray], g1, initg1).reduce(f1, initf1)
+                   : d === 1 || anArray.every(x => !Array.isArray(x))
+                   ? reduceDeep([singleArray1, anArray], g1, initg1, 1).reduce(f1, initf1)
                    : error("Invalid array", anArray);
         }
 
@@ -85,13 +94,13 @@ function Arrycer(option) {
         if(!Array.isArray(array1) && !Array.isArray(array2)) {
             return inner([array1], array2, f, g, initf, initg);
         } else if(!Array.isArray(array1)) {
-            const cols = reduceDeep(array2, (accum, x) => accum.concat([x]), []);
+            const cols = reduceDeep(array2, (accum, x) => accum.concat([x]), [], depth2 - 1);
 
             return innerScalar(cols, array1, depth1, g1);
         } else if(!Array.isArray(array2)) {
             return innerScalar(array1, array2, depth1, (x, y) => g1(y, x));
         } else {
-            const cols = reduceDeep(array2, (accum, x) => accum.concat([x]), []);
+            const cols = reduceDeep(array2, (accum, x) => accum.concat([x]), [], depth2 - 1);
 
             return innerArray1(array1, cols, depth1);
         }
@@ -294,7 +303,7 @@ function Arrycer(option) {
             if(!Array.isArray(array1)) {
                 error("Invalid array");
             } else if(axis !== level) {
-                return array1.map((x, i) => inner(x, rotate[i], level + 1));
+                return array1.map((x, i) => inner(x, Array.isArray(rotate) ? rotate[i] : rotate, level + 1));
             } else if(Array.isArray(rotate)) {
                 return array1.map((x, i) => x.map((y, j) => array1[(i + rotate[j] + array1.length) % array1.length][j]));
             } else {
@@ -319,9 +328,9 @@ function Arrycer(option) {
             if(arrays.every(x => x.length === 0)) {
                 return arrays;
             } else if(arrays.every(x => x.length > 0)) {
-                return map((h, t) => h.concat(t),
-                    map((...xs) => xs.map(x => x[0]), arrays),
-                    innerLayer(...map((...xs) => xs.flatMap(x => x.slice(1)), arrays)));
+                return map1((h, t) => h.concat(t),
+                    map1((...xs) => xs.map(x => x[0]), arrays),
+                    innerLayer(...map1((...xs) => xs.flatMap(x => x.slice(1)), arrays)));
             } else {
                 error("Invalid arrays", arrays);
             }
@@ -396,8 +405,12 @@ function Arrycer(option) {
         }
     }
 
-    function map(f, ...arrays) {
+    function map1(f, ...arrays) {
         return mapDeep(f, 1, ...arrays);
+    }
+
+    function map(f, ...arrays) {
+        return mapDeep(f, Number.MAX_SAFE_INTEGER, ...arrays);
     }
 
     function mapScalar(anObject, f, scalar, depth) {
@@ -1072,6 +1085,7 @@ function Arrycer(option) {
     const me = {
         error: error,
         mapDeep: mapDeep,
+        map1: map1,
         map: map,
         reshape: reshape,
         generate: generate,
