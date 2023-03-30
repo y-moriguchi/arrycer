@@ -68,6 +68,7 @@ describe("arrycer", function() {
 
         it("transpose", function() {
             ok(A.transpose([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [2, 3, 4]]], 1, 2, 0), [[[1, 7], [2, 8], [3, 9]], [[4, 2], [5, 3], [6, 4]]]);
+            ok(A.transpose(A.reshape("ABCDEFGHIJKL".split(""), 2, 2, 3), 1, 0, 0), [["A", "G"], ["E", "K"]]);
         });
 
         it("reduceAxis", function() {
@@ -361,6 +362,7 @@ describe("arrycer", function() {
             expect(() => A.transpose([[1, 2], [3, 4]], 0, "1")).toThrow();
             expect(() => A.transpose([[1, 2], [3, 4]], 0)).toThrow();
             expect(() => A.transpose([[1, 2], [3, [4, 5]]], 1, 0)).toThrow();
+            expect(() => A.transpose([[1, 2], [3, 4]], 0, 2)).toThrow();
         });
 
         it("reduceAxis", function() {

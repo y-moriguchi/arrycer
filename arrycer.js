@@ -28,6 +28,30 @@ function Arrycer(option) {
                : "";
     }
 
+    function getIndex(array1, indexVector) {
+        return !Array.isArray(array1)
+               ? array1
+               : indexVector.length === 0
+               ? array1
+               : !Number.isSafeInteger(indexVector[0]) || indexVector[0] < 0 || indexVector[0] >= array1.length
+               ? error("Invalid index", indexVector[0])
+               : getIndex(array1[indexVector[0]], indexVector.slice(1));
+    }
+
+    function setIndex(array1, indexVector, value) {
+        if(array1[indexVector[0]] === undef) {
+            array1[indexVector[0]] = [];
+        }
+
+        if(!Number.isSafeInteger(indexVector[0]) || indexVector[0] < 0 || indexVector[0] >= array1.length) {
+            error("Invalid index", indexVector[0])
+        } else if(indexVector.length > 1) {
+            setIndex(array1[indexVector[0]], indexVector.slice(1), value);
+        } else {
+            array1[indexVector[0]] = value;
+        }
+    }
+
     function reduceDeep(anArray, f, init, depth) {
         if(!Array.isArray(anArray)) {
             return anArray;
@@ -175,25 +199,44 @@ function Arrycer(option) {
                    : setArray(a, result, indices, 0)
         }
 
-        if(axes.some(x => typeof x !== "number")) {
-            error("illegal argument", axes);
-        }
+        function diagonal(max, rankVector, inIndices, outIndices) {
+            if(outIndices.length < max + 1) {
+                const dest = axes.indexOf(outIndices.length);
 
-        const sorted = axes.slice().sort();
-
-        for(let i = 0; i < axes.length; i++) {
-            if(sorted[i] !== i) {
-                error("illegal argument", axes);
+                for(let i = 0; i < rankVector[dest]; i++) {
+                    for(let j = 0; j < axes.length; j++) {
+                        if(axes[j] === outIndices.length) {
+                            inIndices[j] = i;
+                        }
+                    }
+                    diagonal(max, rankVector, inIndices, outIndices.concat([i]));
+                }
+            } else {
+                setIndex(result, outIndices, getIndex(anArray, inIndices));
             }
         }
 
-        const arrayRank = rank(anArray);
-
-        if(arrayRank === null || arrayRank.length !== axes.length) {
-            error("illegal array");
+        if(axes.some(x => typeof x !== "number")) {
+            error("illegal argument", axes);
         } else {
-            inner(anArray, []);
-            return result;
+            const sorted = axes.slice().sort();
+            const max = Math.max(...sorted);
+            const check = max >= axes.length ? error("Invalid axes", axes) : new Array(max);
+            const isDiagonal = max < axes.length - 1;
+            const arrayRank = rank(anArray);
+
+            for(let i = 0; i < axes.length; i++) {
+                check[sorted] = sorted[i];
+            }
+
+            if(check.some(x => !x)) {
+                error("illegal argument", axes);
+            } else if(arrayRank === null || arrayRank.length !== axes.length) {
+                error("illegal array");
+            } else {
+                isDiagonal ? diagonal(max, arrayRank, [], []) : inner(anArray, []);
+                return result;
+            }
         }
     }
 
