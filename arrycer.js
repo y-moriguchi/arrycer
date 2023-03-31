@@ -623,23 +623,23 @@ function Arrycer(option) {
 
     const equalsDeep = (...arrays) => equalsDeepF((x, y) => x === y, ...arrays);
 
-    function makeGenerator(anArray, predArray) {
-        function* walkArray(anArray) {
-            if(predArray(anArray)) {
-                for(let i = 0; i < anArray.length; i++) {
-                    yield* walkArray(anArray[i]);
-                }
-            } else {
-                yield anArray;
+    function* walkArray(anArray, predArray, depth) {
+        if(depth === 0 || !predArray(anArray)) {
+            yield anArray;
+        } else {
+            for(let i = 0; i < anArray.length; i++) {
+                yield* walkArray(anArray[i], predArray, depth - 1);
             }
         }
+    }
 
+    function makeGenerator(anArray, predArray) {
         let walk = null;
 
         function* inner() {
             while(true) {
                 if(walk === null) {
-                    walk = walkArray(anArray);
+                    walk = walkArray(anArray, predArray);
                 } else {
                     const result = walk.next();
 
@@ -674,6 +674,21 @@ function Arrycer(option) {
             error("Array must not be empty", anArray);
         } else {
             return inner(shape);
+        }
+    }
+
+    function vectorize(anArray, depth) {
+        const walk = walkArray(anArray, Array.isArray, depth);
+        const result = [];
+
+        while(true) {
+            const next = walk.next();
+
+            if(next.done) {
+                return result;
+            } else {
+                result.push(next.value);
+            }
         }
     }
 
@@ -1134,7 +1149,6 @@ function Arrycer(option) {
         mapDeep: mapDeep,
         map1: map1,
         map: map,
-        reshape: reshape,
         generate: generate,
         iterate: iterate
     };
@@ -1159,6 +1173,8 @@ function Arrycer(option) {
         encode: encode,
         equalsDeepF: equalsDeepF,
         equalsDeep: equalsDeep,
+        reshape: reshape,
+        vectorize: vectorize,
         isEmpty: isEmpty,
         first: first,
         rank: rank,

@@ -234,6 +234,11 @@ describe("arrycer", function() {
             ok(A.reshape([[1, 2], [3, 4]], 2, 3), [[1, 2, 3], [4, 1, 2]]);
         });
 
+        it("vectorize", function() {
+            ok(A.vectorize([[1, 2], 3]), [1, 2, 3]);
+            ok(A.vectorize([[[1, 2]], [[3, 4]]], 2), [[1, 2], [3, 4]]);
+        });
+
         it("isEmpty", function() {
             ok(A.isEmpty([]), true);
             ok(A.isEmpty(2), false);
