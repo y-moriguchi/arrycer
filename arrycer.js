@@ -810,8 +810,82 @@ function Arrycer(option) {
         }
     }
 
+    function set(anArray, indices, rvalue, depth) {
+        const checkRvalue = (rvalue, length) => !Array.isArray(rvalue) || rvalue.length === length ? undef : error("Size is not matched", length);
+        const checkValidIndex = (i, anArray) => Number.isSafeInteger(i) && i >= 0 && i < anArray.length ? undef : error("Invalid index", i);
+
+        function inner(anArray, indices, rvalue, depth) {
+            if(!Array.isArray(anArray) || anArray.length === 0) {
+                error("Invalid value", anArray);
+            } else if(depth === 1 || anArray.every(x => !Array.isArray(x))) {
+                if(indices.length !== 1) {
+                    error("Invalid indices", indices);
+                } else if(!Array.isArray(rvalue)) {
+                    if(indices[0] === null) {
+                        anArray.fill(rvalue);
+                    } else if(!Array.isArray(indices[0])) {
+                        checkValidIndex(indices[0], anArray);
+                        anArray[indices[0]] = rvalue;
+                    } else if(indices[0].every(x => Number.isSafeInteger(x) && x >= 0 && x < anArray.length)) {
+                        checkRvalue(rvalue, indices[0].length);
+                        for(let i = 0; i < indices[0].length; i++) {
+                            anArray[indices[0][i]] = rvalue;
+                        }
+                    } else {
+                        error("Invalid index", indices);
+                    }
+                } else {
+                    if(indices.length !== 1) {
+                        error("Invalid indices", indices);
+                    } else if(indices[0] === null) {
+                        checkRvalue(rvalue, anArray.length);
+                        for(let i = 0; i < anArray.length; i++) {
+                            anArray[i] = rvalue[i];
+                        }
+                    } else if(!Array.isArray(indices[0])) {
+                        checkValidIndex(indices[0], anArray);
+                        anArray[indices[0]] = rvalue;
+                    } else if(indices[0].every(x => Number.isSafeInteger(x) && x >= 0 && x < anArray.length)) {
+                        checkRvalue(rvalue, indices[0].length);
+                        for(let i = 0; i < indices[0].length; i++) {
+                            anArray[indices[0][i]] = rvalue[i];
+                        }
+                    } else {
+                        error("Invalid index", indices);
+                    }
+                }
+            } else if(indices.length === 0) {
+                error("Invalid indices", indices);
+            } else if(indices[0] === null) {
+                checkRvalue(rvalue, anArray.length);
+                for(let i = 0; i < anArray.length; i++) {
+                    inner(anArray[i], indices.slice(1), Array.isArray(rvalue) ? rvalue[i] : rvalue, depth - 1);
+                }
+            } else if(!Array.isArray(indices[0])) {
+                checkValidIndex(indices[0], anArray);
+                inner(anArray[indices[0]], indices.slice(1), rvalue, depth - 1);
+            } else if(indices[0].every(x => Number.isSafeInteger(x) && x >= 0 && x < anArray.length)) {
+                checkRvalue(rvalue, indices[0].length);
+                for(let i = 0; i < indices[0].length; i++) {
+                    inner(anArray[indices[0][i]], indices.slice(1), Array.isArray(rvalue) ? rvalue[i] : rvalue, depth - 1);
+                }
+            } else {
+                error("Invalid index", indices);
+            }
+        }
+
+        if(depth !== undef && (!Number.isSafeInteger(depth) || depth <= 0)) {
+            error("Invalid depth", depth);
+        }
+        inner(anArray, indices, rvalue, depth);
+    }
+
     function indexOfArray(aVector, anArray) {
         return mapDeep(x => aVector.indexOf(x), Number.MAX_SAFE_INTEGER, anArray);
+    }
+
+    function lastIndexOfArray(aVector, anArray) {
+        return mapDeep(x => aVector.lastIndexOf(x), Number.MAX_SAFE_INTEGER, anArray);
     }
 
     function generate(g, ...axes) {
@@ -845,8 +919,21 @@ function Arrycer(option) {
         return mapDeep(x => aVector.at(x), Number.MAX_SAFE_INTEGER, anArray);
     }
 
-    function member(anArray, aVector) {
-        return map(x => aVector.indexOf(x) >= 0 ? 1 : 0, anArray);
+    function member(anArray, dest) {
+        function indexOf(x) {
+            const g = walkArray(dest, Array.isArray);
+
+            while(true) {
+                const next = g.next();
+
+                if(next.done) {
+                    return 0;
+                } else if(next.value === x) {
+                    return 1;
+                }
+            }
+        }
+        return map(x => indexOf(x), anArray);
     }
 
     function sliceDeep(anArray, aVector) {
@@ -1181,7 +1268,9 @@ function Arrycer(option) {
         sortIndex: sortIndex,
         sortIndexDesc: sortIndexDesc,
         subarray: subarray,
+        set: set,
         indexOfArray: indexOfArray,
+        lastIndexOfArray: lastIndexOfArray,
         atArray: atArray,
         member: member,
         sliceDeep: sliceDeep,

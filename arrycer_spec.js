@@ -31,6 +31,11 @@ describe("arrycer", function() {
         }
     }
 
+    function over(f, init, expected) {
+        f(init);
+        ok(init, expected);
+    }
+
     beforeEach(function() {
     });
 
@@ -290,8 +295,38 @@ describe("arrycer", function() {
             ok(A.subarray([[1, 2], [3, 4]], [[1, 0], null]), [[3, 4], [1, 2]]);
         });
 
+        it("set", function() {
+            over(x => A.set(x, [0], 9), [1, 2, 3], [9, 2, 3]);
+            over(x => A.set(x, [0, 1], 9), [[1, 2, 3], [4, 5, 6]], [[1, 9, 3], [4, 5, 6]]);
+            over(x => A.set(x, [0, null], 9), [[1, 2, 3], [4, 5, 6]], [[9, 9, 9], [4, 5, 6]]);
+            over(x => A.set(x, [0, [2, 0]], 9), [[1, 2, 3], [4, 5, 6]], [[9, 2, 9], [4, 5, 6]]);
+            over(x => A.set(x, [null, 1], 9), [[1, 2, 3], [4, 5, 6]], [[1, 9, 3], [4, 9, 6]]);
+            over(x => A.set(x, [null, null], 9), [[1, 2, 3], [4, 5, 6]], [[9, 9, 9], [9, 9, 9]]);
+            over(x => A.set(x, [null, [2, 0]], 9), [[1, 2, 3], [4, 5, 6]], [[9, 2, 9], [9, 5, 9]]);
+            over(x => A.set(x, [[2, 0], 1], 9), [[1, 2], [3, 4], [5, 6]], [[1, 9], [3, 4], [5, 9]]);
+            over(x => A.set(x, [[2, 0], null], 9), [[1, 2], [3, 4], [5, 6]], [[9, 9], [3, 4], [9, 9]]);
+            over(x => A.set(x, [[2, 0], [2, 0]], 9), [[1, 2, 2], [3, 4, 2], [5, 6, 2]], [[9, 2, 9], [3, 4, 2], [9, 6, 9]]);
+            over(x => A.set(x, [0, 1], [9]), [[1, 2, 3], [4, 5, 6]], [[1, [9], 3], [4, 5, 6]]);
+            over(x => A.set(x, [0, null], [9, 8, 7]), [[1, 2, 3], [4, 5, 6]], [[9, 8, 7], [4, 5, 6]]);
+            over(x => A.set(x, [0, [2, 0]], [9, 8]), [[1, 2, 3], [4, 5, 6]], [[8, 2, 9], [4, 5, 6]]);
+            over(x => A.set(x, [null, 1], [9, 8]), [[1, 2, 3], [4, 5, 6]], [[1, 9, 3], [4, 8, 6]]);
+            over(x => A.set(x, [null, null], [[9, 8, 7], [9, 8, 7]]), [[1, 2, 3], [4, 5, 6]], [[9, 8, 7], [9, 8, 7]]);
+            over(x => A.set(x, [null, [2, 0]], [[9, 8], [9, 8]]), [[1, 2, 3], [4, 5, 6]], [[8, 2, 9], [8, 5, 9]]);
+            over(x => A.set(x, [[2, 0], 1], [9, 8]), [[1, 2], [3, 4], [5, 6]], [[1, 8], [3, 4], [5, 9]]);
+            over(x => A.set(x, [[2, 0], null], [[9, 8], [7, 6]]), [[1, 2], [3, 4], [5, 6]], [[7, 6], [3, 4], [9, 8]]);
+            over(x => A.set(x, [[2, 0], [2, 0]], [[9, 8], [7, 6]]), [[1, 2, 2], [3, 4, 2], [5, 6, 2]], [[6, 2, 7], [3, 4, 2], [8, 6, 9]]);
+            over(x => A.set(x, [1], 9, 1), [[1, 2, 3], [4, 5, 6]], [[1, 2, 3], 9]);
+            over(x => A.set(x, [1], [9, 8], 1), [[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [9, 8]]);
+        });
+
         it("indexOfArray", function() {
             ok(A.indexOfArray([1, 2, 3], [[0, 1], [2, 3]]), [[-1, 0], [1, 2]]);
+            ok(A.indexOfArray([1, 1, 0], [[0, 1], [2, 3]]), [[2, 0], [-1, -1]]);
+        });
+
+        it("lastIndexOfArray", function() {
+            ok(A.lastIndexOfArray([1, 2, 3], [[0, 1], [2, 3]]), [[-1, 0], [1, 2]]);
+            ok(A.lastIndexOfArray([1, 1, 0], [[0, 1], [2, 3]]), [[2, 1], [-1, -1]]);
         });
 
         it("generate", function() {
@@ -310,6 +345,7 @@ describe("arrycer", function() {
 
         it("member", function() {
             ok(A.member([[2, 8], [7, -1]], [2, 7]), [[1, 0], [1, 0]]);
+            ok(A.member([[2, 8], [7, -1]], [[2], [[7]]]), [[1, 0], [1, 0]]);
         });
 
         it("sliceDeep", function() {
@@ -452,6 +488,36 @@ describe("arrycer", function() {
             expect(() => A.subarray([1, 2], [1, 2])).toThrow();
             expect(() => A.subarray([1, 2], ["a"])).toThrow();
             expect(() => A.subarray([1, 2], [-1])).toThrow();
+        });
+
+        it("set", function() {
+            expect(() => A.set(1, [1], 9)).toThrow();
+            expect(() => A.set([1, 2], [1, 2], 9)).toThrow();
+            expect(() => A.set([1, 2], [], 9)).toThrow();
+            expect(() => A.set([1, 2], [1, 2], [9])).toThrow();
+            expect(() => A.set([1, 2], [0.1], 9)).toThrow();
+            expect(() => A.set([1, 2], [-1], 9)).toThrow();
+            expect(() => A.set([1, 2], [2], 9)).toThrow();
+            expect(() => A.set([1, 2], [[0.1, 1]], 9)).toThrow();
+            expect(() => A.set([1, 2], [[-1, 1]], 9)).toThrow();
+            expect(() => A.set([1, 2], [[0, 2]], 9)).toThrow();
+            expect(() => A.set([1, 2], [null], [1, 2, 9])).toThrow();
+            expect(() => A.set([1, 2], [null], [2])).toThrow();
+            expect(() => A.set([1, 2, 3], [[0, 1]], [1, 2, 9])).toThrow();
+            expect(() => A.set([1, 2, 3], [[0, 1]], [2])).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [], 9)).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [1, 1, 1], 9)).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [-1, 0], 9)).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [2, 0], 9)).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [[0.1, 1], 0], 9)).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [[-1, 1], 0], 9)).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [[2, 1], 0], 9)).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [null, 1], [[2, 3], [4, 5], [6, 7]])).toThrow();
+            expect(() => A.set([[1, 2], [3, 4]], [null, 1], [[2, 3]])).toThrow();
+            expect(() => A.set([[1, 2], [3, 4], [5, 6]], [[0, 1], 1], [[2, 3], [4, 5], [6, 7]])).toThrow();
+            expect(() => A.set([[1, 2], [3, 4], [5, 6]], [[0, 1], 1], [[2, 3]])).toThrow();
+            expect(() => A.set([0, 1], [1], 9, 0.1)).toThrow();
+            expect(() => A.set([0, 1], [1], 9, 0)).toThrow();
         });
 
         it("generate", function() {
