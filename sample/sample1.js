@@ -100,3 +100,10 @@ function removeTag(txt) {
         (A.member(t, ["<", ">"])).map(x => !x ? 1 : 0), 0).join("");
 }
 
+// moving average method
+function movingAverage(x) {
+    const ix = A.outer(A.iterate(x => x + 1, 0, x.length - 11), A.iterate(x => x + 1, 1, 12), (x, y) => x + y - 1);
+
+    return A.reduceAxis(A.atArray(x, ix), (accum, x) => accum + x, 1).map(x => x / 12);
+}
+
