@@ -107,3 +107,38 @@ function movingAverage(x) {
     return A.reduceAxis(A.atArray(x, ix), (accum, x) => accum + x, 1).map(x => x / 12);
 }
 
+// draw 1D cell automaton
+function cell(init, rule, i) {
+    if(i > 0) {
+        const a2 = init[0];
+        const a1 = A.shiftAxis(a2, -1, 0);
+        const a3 = A.shiftAxis(a2, 1, 0);
+        const calculated = A.map(rule, a1, a2, a3);
+        const shifted = A.shiftAxis(init, -1, 0);
+
+        shifted[0] = calculated;
+        return cell(shifted, rule, i - 1);
+    } else {
+        return A.reverseAxis(init, 0);
+    }
+}
+
+function generateRule(rule) {
+    return (a1, a2, a3) =>
+        !a1 && !a2 && !a3
+        ? rule & 1
+        : !a1 && !a2 && a3
+        ? rule & 2
+        : !a1 && a2 && !a3
+        ? rule & 4
+        : !a1 && a2 && a3
+        ? rule & 8
+        : a1 && !a2 && !a3
+        ? rule & 16
+        : a1 && !a2 && a3
+        ? rule & 32
+        : a1 && a2 && !a3
+        ? rule & 64
+        : rule & 128;
+}
+

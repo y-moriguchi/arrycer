@@ -12,6 +12,9 @@ function Arrycer(option) {
     const undef = void 0;
     const innerInit = {};
 
+    const deepCopyF = (array1, f) => Array.isArray(array1) ? array1.map(x => deepCopyF(x, f)) : f(array1);
+    const deepcopy = array => deepCopyF(array, x => x);
+
     function error(message, anObject) {
         if(anObject === undef) {
             throw new Error(message);
@@ -356,6 +359,28 @@ function Arrycer(option) {
         return inner(array1, rotate, 0);
     }
 
+    function shiftAxis(array1, rotate, axis, pad) {
+        function inner(array1, rotate, level) {
+            if(!Array.isArray(array1)) {
+                error("Invalid array");
+            } else if(axis !== level) {
+                return array1.map((x, i) => inner(x, Array.isArray(rotate) ? rotate[i] : rotate, level + 1));
+            } else if(Array.isArray(rotate)) {
+                return array1.map((x, i) =>
+                    x.map((y, j) =>
+                        rotate[j] >= 0
+                        ? (i + rotate[j] >= array1.length ? deepCopyF(array1[0][j], x => pad) : array1[i + rotate[j]][j])
+                        : (i + rotate[j] < 0 ? deepCopyF(array1[0][j], x => pad) : array1[i + rotate[j]][j])));
+            } else {
+                return array1.map((x, i) =>
+                    rotate >= 0
+                    ? (i + rotate >= array1.length ? deepCopyF(array1[0], x => pad) : array1[i + rotate])
+                    : (i + rotate < 0 ? deepCopyF(array1[0], x => pad) : array1[i + rotate]));
+            }
+        }
+        return inner(array1, rotate, 0);
+    }
+
     function reverseDeep(anArray, depth) {
         return !Array.isArray(anArray)
                ? anArray
@@ -461,9 +486,6 @@ function Arrycer(option) {
                ? anObject.map(x => mapScalar(x, f, scalar, depth - 1))
                : f(anObject, scalar);
     }
-
-    const deepCopyF = (array1, f) => Array.isArray(array1) ? array1.map(x => deepCopyF(x, f)) : f(array1);
-    const deepcopy = array => deepCopyF(array, x => x);
 
     function replicateAxis(array1, vector, axis, pad) {
         const padF = pad === undef ? 0 : pad;
@@ -1251,6 +1273,7 @@ function Arrycer(option) {
         reverseAxis: reverseAxis,
         reverseDeep: reverseDeep,
         rotateAxis: rotateAxis,
+        shiftAxis: shiftAxis,
         concatAxis: concatAxis,
         mapScalar: mapScalar,
         replicateAxis: replicateAxis,

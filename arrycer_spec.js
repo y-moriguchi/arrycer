@@ -125,6 +125,16 @@ describe("arrycer", function() {
             ok(A.rotateAxis([1, 2, [3]], 2, 0), [[3], 1, 2]);
         });
 
+        it("shiftAxis", function() {
+            ok(A.shiftAxis([1, 2, 3], 2, 0, 0), [3, 0, 0]);
+            ok(A.shiftAxis([1, 2, 3], -2, 0, 0), [0, 0, 1]);
+            ok(A.shiftAxis([[1, 2, 3], [4, 5, 6]], [2, 1], 1, 0), [[3, 0, 0], [5, 6, 0]]);
+            ok(A.shiftAxis([[1, 2], [3, 4], [5, 6]], [2, 1], 0, 0), [[5, 4], [0, 6], [0, 0]]);
+            ok(A.shiftAxis(A.reshape([1, 2, 3, 4, 5, 6, 7], 3, 3, 3), A.reshape([1, 2, -2], 3, 3), 1, 0),
+                [[[4, 1, 0], [7, 0, 0], [0, 0, 3]], [[6, 3, 0], [2, 0, 0], [0, 0, 5]], [[1, 5, 0], [4, 0, 0], [0, 0, 7]]]);
+            ok(A.shiftAxis([1, 2, [3]], 2, 0, 0), [[3], 0, 0]);
+        });
+
         it("reverseDeep", function() {
             ok(A.reverseDeep(2, 1), 2);
             ok(A.reverseDeep([1, 2, 3], 100), [3, 2, 1]);
@@ -424,6 +434,10 @@ describe("arrycer", function() {
 
         it("rotateAxis", function() {
             expect(() => A.rotateAxis(2, 1, 0)).toThrow();
+        });
+
+        it("shiftAxis", function() {
+            expect(() => A.shiftAxis(2, 1, 0)).toThrow();
         });
 
         it("reverseDeep", function() {
