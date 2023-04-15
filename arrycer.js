@@ -65,14 +65,19 @@ function Arrycer(option) {
         } else if(anArray.every(x => x.length === 0)) {
             return [];
         } else if(anArray.every(x => Array.isArray(x))) {
-            const heads = anArray.map(x => x[0]);
-            const tails = anArray.map(x => x.slice(1));
+            const maxLength = anArray.reduce((accum, x) => Math.max(accum, x.length), -1);
+            const result = [];
 
-            if(depth === 0 || !Array.isArray(heads) || !Array.isArray(heads[0])) {
-                return [heads.reduce(f, init)].concat(reduceDeep(tails, f, init, depth));
-            } else {
-                return [reduceDeep(heads, f, init, depth - 1)].concat(reduceDeep(tails, f, init, depth));
+            for(let i = 0; i < maxLength; i++) {
+                const ptr = anArray.map(x => x[i]);
+
+                if(depth === 0 || !Array.isArray(ptr) || !Array.isArray(ptr[0])) {
+                    result.push(ptr.reduce(f, init));
+                } else {
+                    result.push(reduceDeep(ptr, f, init, depth - 1));
+                }
             }
+            return result;
         } else {
             error("Invalid array", anArray);
         }
