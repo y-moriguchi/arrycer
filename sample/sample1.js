@@ -142,3 +142,24 @@ function generateRule(rule) {
         : rule & 128;
 }
 
+// draw Prime Complex Integer
+function isPrime(x) {
+    if(x < 2) {
+        return false;
+    } else {
+        for(let i = 2; i < Math.sqrt(x); i++) {
+            if(x % i === 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+function complexInteger() {
+    const a = A.outer(A.iterate(x => x + 1, -200, 401), A.iterate(x => x + 1, -200, 401), (x, y) => x * x + y * y);
+    const result = A.map(x => isPrime(x) ? 1 : 0, a);
+
+    return result;
+}
+
