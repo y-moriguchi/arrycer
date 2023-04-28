@@ -1025,6 +1025,62 @@ function Arrycer(option) {
                : error("Invalid argument", aVector[0]);
     }
 
+    function findArray(array, arraySearch, f) {
+        const g = f ? f : (x, y) => x === y;
+        const rankArray = rank(array);
+        const rankArraySearch = rank(arraySearch);
+
+        function findInner(array, arraySearch, outOfBound) {
+            if(!Array.isArray(array) || !Array.isArray(arraySearch)) {
+                return outOfBound ? false : g(array, arraySearch);
+            } else if(array.length === 0 || arraySearch.length === 0) {
+                error("Array length is zero");
+            } else if(array.every(x => !Array.isArray(x))) {
+                const result = [];
+
+                for(let offset = 0; offset < array.length; offset++) {
+                    let flag = true;
+
+                    for(let i = 0; i < arraySearch.length; i++) {
+                        flag = flag && !(outOfBound || i + offset >= array.length) && findInner(array[offset + i], arraySearch[i], false);
+                    }
+                    result.push(flag);
+                }
+                return result;
+            } else {
+                const result = [];
+
+                for(let offset = 0; offset < array.length; offset++) {
+                    const flags = [];
+
+                    for(let i = 0; i < arraySearch.length; i++) {
+                        if(outOfBound || i + offset >= array.length) {
+                            flags.push(findInner(array[0], arraySearch[0], true));
+                        } else {
+                            flags.push(findInner(array[offset + i], arraySearch[i], false));
+                        }
+                    }
+                    result.push(reduceAxis(flags, (accum, x) => accum && x, 0, true, false));
+                }
+                return result;
+            }
+        }
+
+        function inner(array, arraySearch, rankArray, rankArraySearch) {
+            return rankArray.length === rankArraySearch.length
+                   ? findInner(array, arraySearch, 0)
+                   : rankArray.length > rankArraySearch.length
+                   ? array.map(x => inner(x, arraySearch, rankArray.slice(1), rankArraySearch))
+                   : findInner(array, arraySearch, true);
+        }
+
+        return rankArray === null
+               ? error("Array is not proper", rank)
+               : rankArraySearch === null
+               ? error("Array is not proper", rankArray)
+               : inner(array, arraySearch, rankArray, rankArraySearch);
+    }
+
     const matrixLib = {
         makeZero: (sizeI, sizeJ) => reshape([0], sizeI, sizeJ),
         makeUnit: x => outer(iota(x), iota(x), (x, y) => x === y),
@@ -1304,6 +1360,7 @@ function Arrycer(option) {
         sliceDeep: sliceDeep,
         take: take,
         drop: drop,
+        findArray: findArray,
         invertMatrix: invertMatrix,
         solveMatrix: solveMatrix
     };
