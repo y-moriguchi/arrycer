@@ -1032,7 +1032,7 @@ function Arrycer(option) {
 
         function findInner(array, arraySearch, outOfBound) {
             if(!Array.isArray(array) || !Array.isArray(arraySearch)) {
-                return outOfBound ? false : g(array, arraySearch);
+                return outOfBound ? 0 : (g(array, arraySearch) ? 1 : 0);
             } else if(array.length === 0 || arraySearch.length === 0) {
                 error("Array length is zero");
             } else if(array.every(x => !Array.isArray(x))) {
@@ -1044,7 +1044,7 @@ function Arrycer(option) {
                     for(let i = 0; i < arraySearch.length; i++) {
                         flag = flag && !(outOfBound || i + offset >= array.length) && findInner(array[offset + i], arraySearch[i], false);
                     }
-                    result.push(flag);
+                    result.push(flag ? 1 : 0);
                 }
                 return result;
             } else {
@@ -1060,7 +1060,7 @@ function Arrycer(option) {
                             flags.push(findInner(array[offset + i], arraySearch[i], false));
                         }
                     }
-                    result.push(reduceAxis(flags, (accum, x) => accum && x, 0, true, false));
+                    result.push(reduceAxis(flags, (accum, x) => accum && x ? 1 : 0, 0, 1, 0));
                 }
                 return result;
             }
